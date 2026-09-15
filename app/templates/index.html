@@ -73,19 +73,7 @@
             <h3 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-3 px-2">Historial Reciente
             </h3>
             <div id="lista-historial" class="space-y-1">
-
-                {% if planificaciones %}
-                {% for plan in planificaciones %}
-                <button hx-get="/historial/{{ plan.id }}" hx-target="#area-documento"
-                    class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-calm-50 transition group flex flex-col gap-0.5">
-                    <span class="text-xs font-bold text-slate-700 truncate group-hover:text-zen-700 transition">{{
-                        plan.titulo }}</span>
-                    <span class="text-[10px] text-slate-400 truncate">{{ plan.area }} • {{ plan.grado }}</span>
-                </button>
-                {% endfor %}
-                {% else %}
-                <div class="px-2 text-xs text-slate-400 italic">No hay documentos aún.</div>
-                {% endif %}
+                {% include "components/lista_historial.html" %}
             </div>
         </div>
 
@@ -119,37 +107,67 @@
     <!-- ÁREA PRINCIPAL -->
     <main class="flex-1 flex flex-col h-full relative">
 
-        <!-- Cabecera Superior: Selector Dual -->
+        <!-- Cabecera Superior: Contexto Institucional y Filtros -->
         <header
             class="bg-white border-b border-calm-200 h-16 flex items-center justify-between px-6 shrink-0 print:hidden z-10">
-            <div class="flex items-center gap-3 w-full max-w-3xl">
-                <span
-                    class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider hidden sm:block">Contexto
-                    Activo:</span>
+            <div class="flex items-center gap-3 w-full max-w-5xl">
+                <!-- Nombre de la I.E. activa -->
+                <div
+                    class="flex items-center gap-1.5 px-2.5 py-1 bg-calm-50 border border-calm-200 rounded-xl shrink-0">
+                    <span class="text-xs">🏫</span>
+                    <span class="text-xs font-bold text-slate-700 truncate max-w-[140px] sm:max-w-none">{{
+                        perfil.nombre_ie if perfil else 'Sin I.E.' }}</span>
+                </div>
 
-                <div class="flex gap-2 w-full sm:w-auto" id="selector-contexto-dual">
+                <div class="h-4 w-px bg-calm-200 hidden sm:block"></div>
+
+                <span
+                    class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider hidden md:block">Contexto:</span>
+
+                <div class="flex gap-2 items-center" id="selector-contexto-dual">
                     <!-- Selector de Área -->
-                    <select name="contexto_activo"
-                        class="bg-calm-50 border border-calm-200 text-zen-800 text-sm font-bold rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-zen-200 focus:border-zen-400 outline-none transition cursor-pointer appearance-none pr-8 relative bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%23475569%22%20viewBox%3D%220%200%2016%22%3E%3Cpath%20d%3D%22M4.22%206.22a.75.75%200%200%201%201.06%200L8%208.94l2.72-2.72a.75.75%200%201%201%201.06%201.06l-3.25%203.25a.75.75%200%200%201-1.06%200L4.22%207.28a.75.75%200%200%201%200-1.06z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px_16px] bg-[right_8px_center] bg-no-repeat">
+                    <select name="contexto_activo" hx-get="/filtrar-historial" hx-include="#selector-contexto-dual"
+                        hx-target="#lista-historial"
+                        class="bg-calm-50 border border-calm-200 text-zen-800 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
                         <option value="Comunicación">Comunicación</option>
                         <option value="Matemática">Matemática</option>
                         <option value="Ciencias Sociales">Ciencias Sociales</option>
                         <option value="Ciencia y Tecnología">Ciencia y Tecnología</option>
-                        <option value="DPCC">DPCC</option>
-                        <option value="Inglés">Inglés</option>
                         <option value="Educación Física">Educación Física</option>
                         <option value="Arte y Cultura">Arte y Cultura</option>
+                        <option value="Inglés">Inglés</option>
+                        <option value="DPCC">DPCC</option>
                     </select>
 
                     <!-- Selector de Grado -->
-                    <select name="grado_activo"
-                        class="bg-calm-50 border border-calm-200 text-zen-800 text-sm font-bold rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-zen-200 focus:border-zen-400 outline-none transition cursor-pointer appearance-none pr-8 relative bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%23475569%22%20viewBox%3D%220%200%2016%22%3E%3Cpath%20d%3D%22M4.22%206.22a.75.75%200%200%201%201.06%200L8%208.94l2.72-2.72a.75.75%200%201%201%201.06%201.06l-3.25%203.25a.75.75%200%200%201-1.06%200L4.22%207.28a.75.75%200%200%201%200-1.06z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px_16px] bg-[right_8px_center] bg-no-repeat">
+                    <select name="grado_activo" hx-get="/filtrar-historial" hx-include="#selector-contexto-dual"
+                        hx-target="#lista-historial"
+                        class="bg-calm-50 border border-calm-200 text-zen-800 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
                         <option value="1° Secundaria">1° Secundaria</option>
                         <option value="2° Secundaria">2° Secundaria</option>
                         <option value="3° Secundaria">3° Secundaria</option>
                         <option value="4° Secundaria">4° Secundaria</option>
                         <option value="5° Secundaria">5° Secundaria</option>
                     </select>
+
+                    <!-- Selector de Sección -->
+                    <select name="seccion_activa" hx-get="/filtrar-historial" hx-include="#selector-contexto-dual"
+                        hx-target="#lista-historial"
+                        class="bg-calm-50 border border-calm-200 text-zen-800 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
+                        <option value="A">Secc. A</option>
+                        <option value="B">Secc. B</option>
+                        <option value="C">Secc. C</option>
+                        <option value="D">Secc. D</option>
+                        <option value="Única">Única</option>
+                    </select>
+                </div>
+
+                <!-- Botón toggle de alternancia -->
+                <div id="contenedor-toggle-filtro" class="ml-auto">
+                    <button hx-get="/filtrar-historial?ver_todos=true" hx-target="#lista-historial" hx-swap="innerHTML"
+                        class="text-[11px] font-bold text-slate-600 hover:text-zen-700 bg-calm-50 border border-calm-200 px-3 py-1.5 rounded-xl transition whitespace-nowrap">
+                        Ver todo el historial
+                    </button>
                 </div>
             </div>
         </header>

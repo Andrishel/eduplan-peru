@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship
 
@@ -10,19 +10,20 @@ class Usuario(SQLModel, table=True):
     nombre_completo: str
     correo: str = Field(unique=True, index=True)
     password_hash: str
-    fecha_registro: datetime = Field(default_factory=datetime.utcnow)
+    rol: str = Field(default="Docente")  # Docente o Directivo
+    es_admin: bool = Field(default=False)  # Para el panel de control
+    fecha_registro: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
-    perfil: Optional["PerfilInstitucional"] = Relationship(back_populates="usuario")
+    # Un usuario puede tener uno o varios perfiles/colegios
+    perfiles: List["PerfilInstitucional"] = Relationship(back_populates="usuario")
     planificaciones: List["Planificacion"] = Relationship(back_populates="usuario")
 
 
 # ==========================================
-# 2. TABLA DE PERFIL INSTITUCIONAL
+# 2. TABLA DE PERFIL INSTITUCIONAL / COLEGIO
 # ==========================================
 class PerfilInstitucional(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    
-    # Permitir None por defecto para no romper semillas automáticas
     usuario_id: Optional[int] = Field(default=None, foreign_key="usuario.id")
     
     nombre_ie: str = Field(default="I.E. Emblemática")
@@ -37,17 +38,35 @@ class PerfilInstitucional(SQLModel, table=True):
         default="Enfoque por competencias según el CNEB con énfasis en trabajo colaborativo."
     )
     
-    usuario: Optional[Usuario] = Relationship(back_populates="perfil")
+    # Relaciones
+    usuario: Optional[Usuario] = Relationship(back_populates="perfiles")
+    cargas: List["CargaAcademica"] = Relationship(back_populates="institucion")
+    planificaciones: List["Planificacion"] = Relationship(back_populates="institucion")
 
 
 # ==========================================
-# 3. TABLA DE HISTORIAL / PLANIFICACIONES
+# 3. TABLA DE CARGA ACADÉMICA (Polidocencia)
+# ==========================================
+class CargaAcademica(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    institucion_id: int = Field(foreign_key="perfilinstitucional.id")
+    
+    nivel: str = Field(default="Secundaria")  # Primaria o Secundaria
+    area: str                                 # Comunicación, Matemática, etc.
+    grado: str                                # 1°, 2°, etc.
+    seccion: str = Field(default="Única")     # A, B, C, Única
+    
+    institucion: Optional[PerfilInstitucional] = Relationship(back_populates="cargas")
+
+
+# ==========================================
+# 4. TABLA DE HISTORIAL / PLANIFICACIONES
 # ==========================================
 class Planificacion(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     
-    # Permitir None por defecto para compatibilidad
     usuario_id: Optional[int] = Field(default=None, foreign_key="usuario.id")
+    institucion_id: Optional[int] = Field(default=None, foreign_key="perfilinstitucional.id")
     
     titulo: str
     tipo_documento: str = Field(default="Documento Pedagógico")
@@ -57,6 +76,8 @@ class Planificacion(SQLModel, table=True):
     prompt_docente: str
     archivo_adjunto: Optional[str] = Field(default=None)
     fijado: bool = Field(default=False)
-    fecha_creacion: datetime = Field(default_factory=datetime.utcnow)
+    fecha_creacion: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
+    # Relaciones bidireccionales
     usuario: Optional[Usuario] = Relationship(back_populates="planificaciones")
+    institucion: Optional[PerfilInstitucional] = Relationship(back_populates="planificaciones")

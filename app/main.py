@@ -4,15 +4,21 @@ import markdown
 from contextlib import asynccontextmanager
 from typing import List, Optional
 from datetime import datetime
-from fastapi import FastAPI, Request, Form, UploadFile, File, Depends, status
+from fastapi import FastAPI, Request, Form, UploadFile, File, Depends, status, Cookie, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
 
 from app.database import crear_db_y_tablas, obtener_session
-from app.models import PerfilInstitucional, Planificacion
+from app.models import PerfilInstitucional, Planificacion, Usuario
 from app.services.gemini_service import responder_consulta
+from app.services.auth_service import (
+    hashear_password, 
+    verificar_password, 
+    crear_token_sesion, 
+    decodificar_token_sesion
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -26,6 +32,20 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+
+# ==========================================
+# DEPENDENCIA DE AUTENTICACIÓN
+# ==========================================
+async def obtener_usuario_actual(
+    session: Session = Depends(obtener_session),
+    session_token: Optional[str] = Cookie(None)
+) -> Optional[Usuario]:
+    if not session_token:
+        return None
+    usuario_id = decodificar_token_sesion(session_token)
+    if not usuario_id:
+        return None
+    return session.get(Usuario, usuario_id)
 
 # ==========================================
 # RUTAS DE NAVEGACIÓN PRINCIPAL
@@ -47,13 +67,114 @@ async def pagina_auth(request: Request):
         name="auth.html"
     )
 
+@app.get("/app", response_class=HTMLResponse)
+async def workspace(
+    request: Request,
+    usuario: Optional[Usuario] = Depends(obtener_usuario_actual),
+    session: Session = Depends(obtener_session)
+):
+    """Renderiza el espacio de trabajo protegido"""
+    if not usuario:
+        return RedirectResponse(url="/auth", status_code=status.HTTP_303_SEE_OTHER)
+
+    perfil = session.exec(
+        select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)
+    ).first()
+    
+    planificaciones = session.exec(
+        select(Planificacion)
+        .where(Planificacion.usuario_id == usuario.id)
+        .order_by(Planificacion.id.desc())
+        .limit(15)
+    ).all()
+    
+    return templates.TemplateResponse(
+        request=request, 
+        name="index.html",
+        context={
+            "usuario": usuario,
+            "perfil": perfil,
+            "planificaciones": planificaciones
+        }
+    )
+
+# ==========================================
+# RUTAS DE REGISTRO Y LOGIN
+# ==========================================
+
+@app.post("/auth/registro")
+async def registro(
+    nombre_completo: str = Form(...),
+    correo: str = Form(...),
+    password: str = Form(...),
+    rol: str = Form(default="Docente"),
+    session: Session = Depends(obtener_session)
+):
+    correo_limpio = correo.strip().lower()
+    existente = session.exec(select(Usuario).where(Usuario.correo == correo_limpio)).first()
+    if existente:
+        return HTMLResponse("<p class='text-red-500 text-xs font-bold text-center mt-2'>El correo ya está registrado.</p>", status_code=400)
+
+    nuevo_usuario = Usuario(
+        nombre_completo=nombre_completo.strip(),
+        correo=correo_limpio,
+        password_hash=hashear_password(password),
+        rol=rol
+    )
+    session.add(nuevo_usuario)
+    session.commit()
+    session.refresh(nuevo_usuario)
+
+    # Crear perfil institucional por defecto asociado al usuario
+    nuevo_perfil = PerfilInstitucional(
+        usuario_id=nuevo_usuario.id,
+        nombre_docente=nuevo_usuario.nombre_completo
+    )
+    session.add(nuevo_perfil)
+    session.commit()
+
+    token = crear_token_sesion(nuevo_usuario.id)
+    response = RedirectResponse(url="/app", status_code=status.HTTP_303_SEE_OTHER)
+    response.set_cookie(key="session_token", value=token, httponly=True, max_age=604800)
+    return response
+
+@app.post("/auth/login")
+async def login(
+    correo: str = Form(...),
+    password: str = Form(...),
+    session: Session = Depends(obtener_session)
+):
+    correo_limpio = correo.strip().lower()
+    usuario = session.exec(select(Usuario).where(Usuario.correo == correo_limpio)).first()
+    
+    if not usuario or not verificar_password(password, usuario.password_hash):
+        return HTMLResponse("<p class='text-red-500 text-xs font-bold text-center mt-2'>Credenciales incorrectas.</p>", status_code=401)
+
+    token = crear_token_sesion(usuario.id)
+    response = RedirectResponse(url="/app", status_code=status.HTTP_303_SEE_OTHER)
+    response.set_cookie(key="session_token", value=token, httponly=True, max_age=604800)
+    return response
+
+@app.get("/logout")
+async def logout():
+    response = RedirectResponse(url="/auth", status_code=status.HTTP_303_SEE_OTHER)
+    response.delete_cookie("session_token")
+    return response
+
+# ==========================================
+# RUTAS DE ONBOARDING
+# ==========================================
+
 @app.get("/onboarding", response_class=HTMLResponse)
 async def onboarding_view(
     request: Request,
+    usuario: Optional[Usuario] = Depends(obtener_usuario_actual),
     session: Session = Depends(obtener_session)
 ):
-    """Muestra el asistente paso a paso para configurar el perfil docente/directivo"""
-    perfil = session.exec(select(PerfilInstitucional)).first()
+    if not usuario:
+        return RedirectResponse(url="/auth", status_code=status.HTTP_303_SEE_OTHER)
+        
+    perfil = session.exec(select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)).first()
     return templates.TemplateResponse(
         request=request, 
         name="onboarding.html",
@@ -70,12 +191,15 @@ async def completar_onboarding(
     area_curricular: Optional[List[str]] = Form(None),
     grado_seccion: Optional[str] = Form(None),
     enfoque_institucional: Optional[str] = Form(None),
+    usuario: Optional[Usuario] = Depends(obtener_usuario_actual),
     session: Session = Depends(obtener_session)
 ):
-    """Guarda la configuración del onboarding en SQLite y redirige a /app"""
-    perfil = session.exec(select(PerfilInstitucional)).first()
+    if not usuario:
+        return RedirectResponse(url="/auth", status_code=status.HTTP_303_SEE_OTHER)
+
+    perfil = session.exec(select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)).first()
     if not perfil:
-        perfil = PerfilInstitucional()
+        perfil = PerfilInstitucional(usuario_id=usuario.id)
         session.add(perfil)
         
     perfil.nombre_ie = nombre_ie.strip()
@@ -83,21 +207,18 @@ async def completar_onboarding(
     perfil.lema = lema.strip() if lema else None
     perfil.nombre_docente = nombre_docente.strip()
     
-    # Procesar niveles educativos seleccionados
     if nivel_educativo:
         niveles_limpios = [n.strip() for n in nivel_educativo if n.strip()]
         perfil.nivel_educativo = ", ".join(niveles_limpios) if niveles_limpios else "No especificado"
     else:
         perfil.nivel_educativo = "No especificado"
 
-    # Procesar áreas curriculares (si es directivo, asigna Gestión Institucional)
     if area_curricular:
         areas_limpias = [a.strip() for a in area_curricular if a.strip()]
         perfil.area_curricular = ", ".join(areas_limpias) if areas_limpias else "Gestión Institucional"
     else:
         perfil.area_curricular = "Gestión Institucional"
     
-    # Procesar grado o sección
     if grado_seccion and grado_seccion.strip():
         perfil.grado_seccion = grado_seccion.strip()
     else:
@@ -111,26 +232,6 @@ async def completar_onboarding(
 
     return RedirectResponse(url="/app", status_code=status.HTTP_303_SEE_OTHER)
 
-@app.get("/app", response_class=HTMLResponse)
-async def workspace(
-    request: Request,
-    session: Session = Depends(obtener_session)
-):
-    """Renderiza el espacio de trabajo (Chat y herramientas)"""
-    perfil = session.exec(select(PerfilInstitucional)).first()
-    planificaciones = session.exec(
-        select(Planificacion).order_by(Planificacion.id.desc()).limit(15)
-    ).all()
-    
-    return templates.TemplateResponse(
-        request=request, 
-        name="index.html",
-        context={
-            "perfil": perfil,
-            "planificaciones": planificaciones
-        }
-    )
-
 # ==========================================
 # RUTAS DE CHAT Y GENERACIÓN IA
 # ==========================================
@@ -140,10 +241,15 @@ async def enviar_mensaje(
     request: Request,
     prompt: str = Form(...),
     contexto_activo: str = Form(default="General"),
-    grado_activo: str = Form(default="General"), # ¡Recibimos el grado dinámico!
+    grado_activo: str = Form(default="General"),
+    seccion_activa: str = Form(default="Única"),
     foto: UploadFile = File(None),
+    usuario: Optional[Usuario] = Depends(obtener_usuario_actual),
     session: Session = Depends(obtener_session)
 ):
+    if not usuario:
+        return HTMLResponse("<p>No autorizado</p>", status_code=401)
+
     ruta_guardada = None
     nombre_archivo = None
     
@@ -153,19 +259,17 @@ async def enviar_mensaje(
         with open(ruta_guardada, "wb") as buffer:
             shutil.copyfileobj(foto.file, buffer)
 
-    # Obtenemos la fecha actual
-    from datetime import datetime
     fecha_actual = datetime.now().strftime("%d/%m/%Y")
+    grado_completo = f"{grado_activo} - {seccion_activa}"
 
-    perfil = session.exec(select(PerfilInstitucional)).first()
+    perfil = session.exec(select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)).first()
     contexto_institucional = ""
 
     if perfil:
-        # Inyectamos el área y grado seleccionados en la cabecera directamente a la IA
         contexto_institucional = (
             f" [I.E.: {perfil.nombre_ie}, UGEL: {perfil.ugel}, Docente: {perfil.nombre_docente}, "
             f"Nivel Educativo: {perfil.nivel_educativo}, Curso Activo: {contexto_activo}, "
-            f"Grados a cargo: {grado_activo}, Enfoque: {perfil.enfoque_institucional}, "
+            f"Grados a cargo: {grado_completo}, Enfoque: {perfil.enfoque_institucional}, "
             f"Fecha de hoy: {fecha_actual}]"
         )
 
@@ -194,10 +298,11 @@ async def enviar_mensaje(
     titulo_doc = titulo_doc.capitalize()
 
     nueva_planificacion = Planificacion(
+        usuario_id=usuario.id,
         titulo=titulo_doc,
         tipo_documento="Documento Pedagógico",
         area=contexto_activo,
-        grado=grado_activo, # Guardamos el grado dinámico en la BD
+        grado=grado_completo,
         contenido_markdown=respuesta_ia,
         prompt_docente=prompt,
         archivo_adjunto=nombre_archivo
@@ -215,7 +320,7 @@ async def enviar_mensaje(
             "respuesta_html": respuesta_html,
             "planificacion_id": nueva_planificacion.id,
             "area_contexto": contexto_activo,
-            "grado_contexto": grado_activo, # Lo enviamos al historial
+            "grado_contexto": grado_completo,
             "es_nuevo": True
         }
     )
@@ -224,10 +329,14 @@ async def enviar_mensaje(
 async def cargar_historial_detalle(
     request: Request,
     planificacion_id: int,
+    usuario: Optional[Usuario] = Depends(obtener_usuario_actual),
     session: Session = Depends(obtener_session)
 ):
+    if not usuario:
+        return HTMLResponse("<p>No autorizado</p>", status_code=401)
+
     plan = session.get(Planificacion, planificacion_id)
-    if not plan:
+    if not plan or plan.usuario_id != usuario.id:
         return HTMLResponse("<p class='text-red-500 text-sm'>No se encontró la planificación.</p>")
 
     respuesta_html = markdown.markdown(
@@ -243,7 +352,7 @@ async def cargar_historial_detalle(
             "archivo_nombre": plan.archivo_adjunto,
             "respuesta_html": respuesta_html,
             "planificacion_id": plan.id,
-            "es_nuevo": False # Al cargar historial, NO inyectamos el botón OOB
+            "es_nuevo": False
         }
     )
 
@@ -254,9 +363,13 @@ async def cargar_historial_detalle(
 @app.get("/modal-perfil", response_class=HTMLResponse)
 async def obtener_modal_perfil(
     request: Request,
+    usuario: Optional[Usuario] = Depends(obtener_usuario_actual),
     session: Session = Depends(obtener_session)
 ):
-    perfil = session.exec(select(PerfilInstitucional)).first()
+    if not usuario:
+        return HTMLResponse("<p>No autorizado</p>", status_code=401)
+
+    perfil = session.exec(select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)).first()
     return templates.TemplateResponse(
         request=request,
         name="components/modal_perfil.html",
@@ -273,11 +386,15 @@ async def guardar_perfil(
     area_curricular: str = Form(...),
     grado_seccion: str = Form(...),
     enfoque_institucional: Optional[str] = Form(None),
+    usuario: Optional[Usuario] = Depends(obtener_usuario_actual),
     session: Session = Depends(obtener_session)
 ):
-    perfil = session.exec(select(PerfilInstitucional)).first()
+    if not usuario:
+        return HTMLResponse("<p>No autorizado</p>", status_code=401)
+
+    perfil = session.exec(select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)).first()
     if not perfil:
-        perfil = PerfilInstitucional()
+        perfil = PerfilInstitucional(usuario_id=usuario.id)
         session.add(perfil)
         
     perfil.nombre_ie = nombre_ie.strip()
@@ -300,21 +417,21 @@ async def guardar_perfil(
 @app.get("/descargar/word/{planificacion_id}")
 async def descargar_word(
     planificacion_id: int,
+    usuario: Optional[Usuario] = Depends(obtener_usuario_actual),
     session: Session = Depends(obtener_session)
 ):
-    """Genera un archivo Word (.doc) a partir del Markdown de la planificación"""
-    plan = session.get(Planificacion, planificacion_id)
-    if not plan:
-        return HTMLResponse("<p>Documento no encontrado.</p>", status_code=404)
+    if not usuario:
+        return RedirectResponse(url="/auth", status_code=status.HTTP_303_SEE_OTHER)
 
-    # Convertimos el markdown a HTML
+    plan = session.get(Planificacion, planificacion_id)
+    if not plan or plan.usuario_id != usuario.id:
+        return HTMLResponse("<p>Documento no encontrado o sin acceso.</p>", status_code=404)
+
     html_body = markdown.markdown(
         plan.contenido_markdown, 
         extensions=['tables', 'nl2br']
     )
 
-    # Plantilla HTML con sintaxis XML de Microsoft Office
-    # Esto asegura que Word respete las tildes (utf-8) y dibuje las tablas correctamente
     html_content = f"""
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
     <head>
@@ -334,13 +451,63 @@ async def descargar_word(
     </html>
     """
 
-    # Limpiamos el título para que sea un nombre de archivo válido
     nombre_seguro = "".join([c for c in plan.titulo if c.isalpha() or c.isdigit() or c==' ']).rstrip()
     nombre_archivo = f"{nombre_seguro.replace(' ', '_')}.doc"
 
-    # Forzamos la descarga del archivo estableciendo los Headers HTTP
     headers = {
         "Content-Disposition": f'attachment; filename="{nombre_archivo}"'
     }
     
     return Response(content=html_content, media_type="application/msword", headers=headers)
+
+@app.get("/filtrar-historial", response_class=HTMLResponse)
+async def filtrar_historial(
+    request: Request,
+    contexto_activo: Optional[str] = None,
+    grado_activo: Optional[str] = None,
+    seccion_activa: Optional[str] = None,
+    ver_todos: bool = False,
+    usuario: Optional[Usuario] = Depends(obtener_usuario_actual),
+    session: Session = Depends(obtener_session)
+):
+    if not usuario:
+        return HTMLResponse("<p>No autorizado</p>", status_code=401)
+
+    query = select(Planificacion).where(Planificacion.usuario_id == usuario.id).order_by(Planificacion.id.desc())
+    
+    if not ver_todos and contexto_activo and grado_activo:
+        grado_filtro = f"{grado_activo} - {seccion_activa}" if seccion_activa else grado_activo
+        query = query.where(
+            Planificacion.area == contexto_activo,
+            Planificacion.grado == grado_filtro
+        )
+        
+    planificaciones = session.exec(query.limit(20)).all()
+    
+    if ver_todos:
+        boton_toggle = """
+        <div id="contenedor-toggle-filtro" hx-swap-oob="true">
+            <button hx-get="/filtrar-historial" 
+                    hx-include="#selector-contexto-dual" 
+                    hx-target="#lista-historial" 
+                    class="text-[11px] font-bold text-zen-700 bg-zen-50 border border-zen-200 px-3 py-1.5 rounded-xl transition whitespace-nowrap">
+                Filtrar por aula activa
+            </button>
+        </div>
+        """
+    else:
+        boton_toggle = """
+        <div id="contenedor-toggle-filtro" hx-swap-oob="true">
+            <button hx-get="/filtrar-historial?ver_todos=true" 
+                    hx-target="#lista-historial" 
+                    class="text-[11px] font-bold text-slate-600 hover:text-zen-700 bg-calm-50 border border-calm-200 px-3 py-1.5 rounded-xl transition whitespace-nowrap">
+                Ver todo el historial
+            </button>
+        </div>
+        """
+
+    contenido_lista = templates.get_template("components/lista_historial.html").render(
+        {"planificaciones": planificaciones}
+    )
+    
+    return HTMLResponse(content=contenido_lista + boton_toggle)

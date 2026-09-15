@@ -1,0 +1,12 @@
+{% if planificaciones %}
+    {% for plan in planificaciones %}
+    <button hx-get="/historial/{{ plan.id }}" hx-target="#area-documento" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-calm-50 transition group flex flex-col gap-0.5 border-l-2 border-transparent hover:border-zen-600">
+        <span class="text-xs font-bold text-slate-700 truncate group-hover:text-zen-700 transition">{{ plan.titulo }}</span>
+        <span class="text-[10px] text-slate-400 truncate font-medium">{{ plan.area }} • {{ plan.grado }}</span>
+    </button>
+    {% endfor %}
+{% else %}
+    <div class="px-3 py-4 text-xs text-slate-400 italic text-center">
+        No hay planificaciones para este grado y sección.
+    </div>
+{% endif %}
