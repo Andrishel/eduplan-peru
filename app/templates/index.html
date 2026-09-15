@@ -72,7 +72,8 @@
         <div class="flex-1 overflow-y-auto px-4 pb-4">
             <h3 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-3 px-2">Historial Reciente
             </h3>
-            <div class="space-y-1">
+            <div id="lista-historial" class="space-y-1">
+
                 {% if planificaciones %}
                 {% for plan in planificaciones %}
                 <button hx-get="/historial/{{ plan.id }}" hx-target="#area-documento"
@@ -101,8 +102,15 @@
                     <span class="text-[10px] text-slate-500 truncate">{{ perfil.nombre_ie if perfil else 'Sin
                         Institución' }}</span>
                 </div>
-                <button class="ml-auto text-slate-400 hover:text-zen-700 transition" title="Configuración">
-                    ⚙️
+                <button hx-get="/modal-perfil" hx-target="body" hx-swap="beforeend"
+                    class="p-2 ml-auto text-slate-400 hover:text-zen-700 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
                 </button>
             </div>
         </div>
@@ -111,34 +119,38 @@
     <!-- ÁREA PRINCIPAL -->
     <main class="flex-1 flex flex-col h-full relative">
 
-        <!-- Cabecera de Contexto (Dropdown de Cursos) -->
+        <!-- Cabecera Superior: Selector Dual -->
         <header
-            class="h-16 bg-white/80 backdrop-blur-md border-b border-calm-200 flex items-center justify-between px-6 shrink-0 z-10 shadow-sm">
-
-            <div class="flex items-center gap-3">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wide hidden sm:block">Contexto
+            class="bg-white border-b border-calm-200 h-16 flex items-center justify-between px-6 shrink-0 print:hidden z-10">
+            <div class="flex items-center gap-3 w-full max-w-3xl">
+                <span
+                    class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider hidden sm:block">Contexto
                     Activo:</span>
 
-                <!-- Selector Dinámico de Áreas Curriculares -->
-                <div class="relative">
-                    <select id="selector-contexto" name="contexto_activo"
-                        class="appearance-none bg-zen-50 border border-zen-200 rounded-xl pl-4 pr-10 py-1.5 text-sm font-extrabold text-zen-800 focus:ring-2 focus:ring-zen-600 focus:outline-none cursor-pointer transition hover:bg-zen-100 shadow-sm">
-                        {% set areas = perfil.area_curricular.split(',') if perfil and perfil.area_curricular else
-                        ['Gestión General'] %}
-                        {% for area in areas %}
-                        <option value="{{ area.strip() }}">{{ area.strip() }}</option>
-                        {% endfor %}
+                <div class="flex gap-2 w-full sm:w-auto" id="selector-contexto-dual">
+                    <!-- Selector de Área -->
+                    <select name="contexto_activo"
+                        class="bg-calm-50 border border-calm-200 text-zen-800 text-sm font-bold rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-zen-200 focus:border-zen-400 outline-none transition cursor-pointer appearance-none pr-8 relative bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%23475569%22%20viewBox%3D%220%200%2016%22%3E%3Cpath%20d%3D%22M4.22%206.22a.75.75%200%200%201%201.06%200L8%208.94l2.72-2.72a.75.75%200%201%201%201.06%201.06l-3.25%203.25a.75.75%200%200%201-1.06%200L4.22%207.28a.75.75%200%200%201%200-1.06z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px_16px] bg-[right_8px_center] bg-no-repeat">
+                        <option value="Comunicación">Comunicación</option>
+                        <option value="Matemática">Matemática</option>
+                        <option value="Ciencias Sociales">Ciencias Sociales</option>
+                        <option value="Ciencia y Tecnología">Ciencia y Tecnología</option>
+                        <option value="DPCC">DPCC</option>
+                        <option value="Inglés">Inglés</option>
+                        <option value="Educación Física">Educación Física</option>
+                        <option value="Arte y Cultura">Arte y Cultura</option>
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-zen-700">
-                        ▾
-                    </div>
-                </div>
-            </div>
 
-            <!-- Indicador de Estado -->
-            <div class="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full">
-                <div class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                <span class="text-[10px] font-extrabold text-emerald-700 uppercase">CNEB 2026 Activo</span>
+                    <!-- Selector de Grado -->
+                    <select name="grado_activo"
+                        class="bg-calm-50 border border-calm-200 text-zen-800 text-sm font-bold rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-zen-200 focus:border-zen-400 outline-none transition cursor-pointer appearance-none pr-8 relative bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%23475569%22%20viewBox%3D%220%200%2016%22%3E%3Cpath%20d%3D%22M4.22%206.22a.75.75%200%200%201%201.06%200L8%208.94l2.72-2.72a.75.75%200%201%201%201.06%201.06l-3.25%203.25a.75.75%200%200%201-1.06%200L4.22%207.28a.75.75%200%200%201%200-1.06z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px_16px] bg-[right_8px_center] bg-no-repeat">
+                        <option value="1° Secundaria">1° Secundaria</option>
+                        <option value="2° Secundaria">2° Secundaria</option>
+                        <option value="3° Secundaria">3° Secundaria</option>
+                        <option value="4° Secundaria">4° Secundaria</option>
+                        <option value="5° Secundaria">5° Secundaria</option>
+                    </select>
+                </div>
             </div>
         </header>
 
@@ -184,7 +196,7 @@
                 </div>
 
                 <!-- Formulario Principal -->
-                <form hx-post="/enviar-mensaje" hx-include="#selector-contexto" hx-target="#area-documento"
+                <form hx-post="/enviar-mensaje" hx-include="#selector-contexto-dual" hx-target="#area-documento"
                     hx-indicator="#indicador-carga"
                     hx-on="htmx:afterRequest: if(event.detail.successful) { this.reset(); document.getElementById('prompt-input').style.height = 'auto'; }"
                     enctype="multipart/form-data"
@@ -226,7 +238,7 @@
         </div>
 
         <!-- Formulario Principal -->
-        <form hx-post="/enviar-mensaje" hx-include="#selector-contexto" hx-target="#area-documento"
+        <form hx-post="/enviar-mensaje" hx-include="#selector-contexto-dual" hx-target="#area-documento"
             hx-indicator="#indicador-carga"
             hx-on="htmx:afterRequest: if(event.detail.successful) { this.reset(); document.getElementById('prompt-input').style.height = 'auto'; }"
             enctype="multipart/form-data"
@@ -259,6 +271,25 @@
             textarea.style.height = 'auto';
             textarea.style.height = textarea.scrollHeight + 'px';
         }
+    </script>
+    <!-- Librería MathJax para renderizar ecuaciones matemáticas -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            }
+        };
+
+        // Escuchador de HTMX: Le dice a MathJax que vuelva a leer la pantalla 
+        // cada vez que la IA nos devuelve un mensaje nuevo.
+        document.body.addEventListener('htmx:afterSwap', function (evt) {
+            if (window.MathJax) {
+                window.MathJax.typesetPromise();
+            }
+        });
     </script>
 </body>
 

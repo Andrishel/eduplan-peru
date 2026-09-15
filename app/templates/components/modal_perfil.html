@@ -1,73 +1,80 @@
-<div id="modal-configuracion" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in">
-  <div class="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+<!-- Fondo oscuro con desenfoque -->
+<div id="modal-backdrop" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in-up"
+     onclick="if(event.target === this) this.remove()">
     
-    <!-- Encabezado -->
-    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-      <div class="flex items-center gap-2.5">
-        <div class="h-9 w-9 rounded-xl bg-blue-800 text-white font-black flex items-center justify-center text-sm shadow">
-          IE
+    <!-- Contenedor del Modal -->
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative">
+        
+        <!-- Cabecera -->
+        <div class="bg-slate-50 border-b border-slate-100 px-6 py-4 flex justify-between items-center">
+            <h2 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                <span>⚙️</span> Configuración
+            </h2>
+            <button onclick="document.getElementById('modal-backdrop').remove()" class="text-slate-400 hover:text-red-500 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
-        <div>
-          <h3 class="text-base font-extrabold text-slate-900">Configuración Institucional</h3>
-          <p class="text-xs text-slate-500">Personaliza la identidad y el contexto pedagógico de tu colegio</p>
-        </div>
-      </div>
-      <button onclick="document.getElementById('modal-configuracion').remove()" class="text-slate-400 hover:text-slate-600 transition p-1 rounded-lg">
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+
+        <!-- Formulario (HTMX lo enviará y luego eliminará el modal) -->
+        <form hx-post="/guardar-perfil" 
+              hx-target="#badge-perfil" 
+              hx-swap="outerHTML"
+              hx-on::after-request="document.getElementById('modal-backdrop').remove()"
+              class="p-6 space-y-5 h-[60vh] overflow-y-auto scrollbar-hide">
+            
+            <!-- Sección 1: Institución -->
+            <div>
+                <h3 class="text-xs font-bold text-zen-700 mb-3 border-b border-calm-100 pb-1">Datos Institucionales</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Nombre del Docente</label>
+                        <input type="text" name="nombre_docente" value="{{ perfil.nombre_docente if perfil else '' }}" required class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-zen-100 focus:border-zen-400 outline-none transition">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Institución (I.E.)</label>
+                            <input type="text" name="nombre_ie" value="{{ perfil.nombre_ie if perfil else '' }}" required class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-zen-100 focus:border-zen-400 outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">UGEL</label>
+                            <input type="text" name="ugel" value="{{ perfil.ugel if perfil else '' }}" required class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-zen-100 focus:border-zen-400 outline-none transition">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección 2: IA y Pedagogía -->
+            <div>
+                <h3 class="text-xs font-bold text-zen-700 mb-3 border-b border-calm-100 pb-1">Directriz Pedagógica</h3>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Enfoque Institucional (Contexto IA)</label>
+                    <textarea name="enfoque_institucional" rows="2" placeholder="Ej. Aprendizaje Basado en Proyectos, Enfoque Ambiental..." class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-zen-100 focus:border-zen-400 outline-none transition resize-none">{{ perfil.enfoque_institucional if perfil else '' }}</textarea>
+                    <p class="text-[9px] text-slate-400 mt-1">La IA usará esto para adaptar las sesiones a la realidad de tu colegio.</p>
+                </div>
+                <!-- Inputs ocultos para mantener los datos que no se editan aquí -->
+                <input type="hidden" name="area_curricular" value="{{ perfil.area_curricular if perfil else 'General' }}">
+                <input type="hidden" name="grado_seccion" value="{{ perfil.grado_seccion if perfil else 'General' }}">
+            </div>
+
+            <!-- Sección 3: Preferencias (Visual) -->
+            <div>
+                <h3 class="text-xs font-bold text-zen-700 mb-3 border-b border-calm-100 pb-1">Preferencias</h3>
+                <div class="flex items-center justify-between p-3 border border-slate-100 rounded-xl bg-slate-50">
+                    <span class="text-sm font-semibold text-slate-700">Modo Oscuro</span>
+                    <!-- Toggle Switch Falso (Por ahora) -->
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" value="" class="sr-only peer">
+                        <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-zen-600"></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Botón Guardar -->
+            <div class="pt-2 pb-2">
+                <button type="submit" class="w-full bg-zen-700 text-white font-bold text-sm py-3 rounded-xl hover:bg-zen-800 transition shadow-md">
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
     </div>
-
-    <!-- Formulario HTMX -->
-    <form hx-post="/guardar-perfil" hx-target="#sidebar-perfil-container" hx-swap="outerHTML" onsubmit="document.getElementById('modal-configuracion').remove()" class="space-y-3.5 text-xs">
-      
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">Nombre de la I.E.</label>
-          <input type="text" name="nombre_ie" value="{{ perfil.nombre_ie }}" required class="w-full rounded-xl border border-slate-300 p-2 text-slate-900 focus:border-blue-700 focus:outline-none">
-        </div>
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">UGEL / DRE</label>
-          <input type="text" name="ugel" value="{{ perfil.ugel }}" required class="w-full rounded-xl border border-slate-300 p-2 text-slate-900 focus:border-blue-700 focus:outline-none">
-        </div>
-      </div>
-
-      <div>
-        <label class="block font-bold text-slate-700 mb-1">Lema Institucional</label>
-        <input type="text" name="lema" value="{{ perfil.lema or '' }}" placeholder="Ej. Disciplina, Estudio y Superación" class="w-full rounded-xl border border-slate-300 p-2 text-slate-900 focus:border-blue-700 focus:outline-none">
-      </div>
-
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">Nombre del Docente</label>
-          <input type="text" name="nombre_docente" value="{{ perfil.nombre_docente }}" required class="w-full rounded-xl border border-slate-300 p-2 text-slate-900 focus:border-blue-700 focus:outline-none">
-        </div>
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">Área Curricular</label>
-          <input type="text" name="area_curricular" value="{{ perfil.area_curricular }}" required class="w-full rounded-xl border border-slate-300 p-2 text-slate-900 focus:border-blue-700 focus:outline-none">
-        </div>
-      </div>
-
-      <div>
-        <label class="block font-bold text-slate-700 mb-1">Grado y Sección</label>
-        <input type="text" name="grado_seccion" value="{{ perfil.grado_seccion }}" required class="w-full rounded-xl border border-slate-300 p-2 text-slate-900 focus:border-blue-700 focus:outline-none">
-      </div>
-
-      <div>
-        <label class="block font-bold text-slate-700 mb-1">Directiva / Enfoque Institucional (System Prompt Particular)</label>
-        <textarea name="enfoque_institucional" rows="2" class="w-full resize-none rounded-xl border border-slate-300 p-2 text-slate-900 focus:border-blue-700 focus:outline-none" placeholder="Instrucciones para la IA: metodologías requeridas, enfoque ambiental, PEI del colegio...">{{ perfil.enfoque_institucional or '' }}</textarea>
-      </div>
-
-      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-        <button type="button" onclick="document.getElementById('modal-configuracion').remove()" class="rounded-xl px-4 py-2 font-bold text-slate-600 hover:bg-slate-100 transition">
-          Cancelar
-        </button>
-        <button type="submit" class="rounded-xl bg-blue-800 px-5 py-2 font-extrabold text-white shadow hover:bg-blue-900 transition">
-          Guardar Cambios
-        </button>
-      </div>
-    </form>
-
-  </div>
 </div>

@@ -8,7 +8,6 @@ engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
 
 def crear_db_y_tablas():
     SQLModel.metadata.create_all(engine)
-    # Crear un perfil inicial por defecto si no existe
     with Session(engine) as session:
         perfil = session.exec(select(PerfilInstitucional)).first()
         if not perfil:

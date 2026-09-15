@@ -3,9 +3,9 @@ import shutil
 import markdown
 from contextlib import asynccontextmanager
 from typing import List, Optional
-
+from datetime import datetime
 from fastapi import FastAPI, Request, Form, UploadFile, File, Depends, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
@@ -140,6 +140,7 @@ async def enviar_mensaje(
     request: Request,
     prompt: str = Form(...),
     contexto_activo: str = Form(default="General"),
+    grado_activo: str = Form(default="General"), # ¡Recibimos el grado dinámico!
     foto: UploadFile = File(None),
     session: Session = Depends(obtener_session)
 ):
@@ -152,52 +153,51 @@ async def enviar_mensaje(
         with open(ruta_guardada, "wb") as buffer:
             shutil.copyfileobj(foto.file, buffer)
 
-    # Contexto del perfil institucional
+    # Obtenemos la fecha actual
+    from datetime import datetime
+    fecha_actual = datetime.now().strftime("%d/%m/%Y")
+
     perfil = session.exec(select(PerfilInstitucional)).first()
     contexto_institucional = ""
+
     if perfil:
+        # Inyectamos el área y grado seleccionados en la cabecera directamente a la IA
         contexto_institucional = (
             f" [I.E.: {perfil.nombre_ie}, UGEL: {perfil.ugel}, Docente: {perfil.nombre_docente}, "
             f"Nivel Educativo: {perfil.nivel_educativo}, Curso Activo: {contexto_activo}, "
-            f"Grados a cargo: {perfil.grado_seccion}, Enfoque: {perfil.enfoque_institucional}]"
+            f"Grados a cargo: {grado_activo}, Enfoque: {perfil.enfoque_institucional}, "
+            f"Fecha de hoy: {fecha_actual}]"
         )
 
-    # Inyección de las reglas pedagógicas oficiales
     reglas_cneb = """
     REGLAS ESTRICTAS DE FORMATO (Basado en requerimientos directivos UGEL):
     Si el usuario pide una sesión de aprendizaje, DEBES estructurarla así:
     1. Título de la sesión.
-    2. Una tabla inicial con las columnas: Área, Competencia, Capacidades, Desempeño, Criterios a evaluar, y Recursos/Materiales.
-    3. Una segunda tabla llamada 'Desarrollo de la Actividad' que incluya los procesos pedagógicos (Inicio, Desarrollo, Cierre) y los procesos didácticos del área.
-    4. Articular explícitamente la sesión con el DUA (Diseño Universal para el Aprendizaje).
+    2. Datos informativos (Usa los datos de contexto provistos y la 'Fecha de hoy').
+    3. Una tabla inicial con las columnas: Área, Competencia, Capacidades, Desempeño, Criterios a evaluar, y Recursos/Materiales.
+    4. Una segunda tabla llamada 'Desarrollo de la Actividad' que incluya los procesos pedagógicos (Inicio, Desarrollo, Cierre) y los procesos didácticos del área.
+    5. Articular explícitamente la sesión con el DUA (Diseño Universal para el Aprendizaje).
     Asegúrate de que los criterios tengan el mismo verbo del desempeño pero más específicos.
     """
 
     prompt_enriquecido = f"{prompt}\n\nDatos de contexto del docente:{contexto_institucional}\n\n{reglas_cneb}"
 
-    # Respuesta generada por Gemini
     respuesta_ia = responder_consulta(prompt_enriquecido, ruta_guardada)
 
-    # Conversión de Markdown a HTML real para renderizar tablas y listas
     respuesta_html = markdown.markdown(
         respuesta_ia, 
         extensions=['tables', 'nl2br', 'fenced_code']
     )
 
-    # Extracción de título representativo para el historial
-    lineas = [line.strip() for line in respuesta_ia.split("\n") if line.strip()]
-    titulo_doc = "Documento Pedagógico"
-    for l in lineas:
-        if l.startswith("#") or "SESIÓN" in l.upper() or "RÚBRICA" in l.upper() or "OFICIO" in l.upper():
-            titulo_doc = l.replace("#", "").strip()[:60]
-            break
+    titulo_limpio = prompt.strip()
+    titulo_doc = (titulo_limpio[:45] + "...") if len(titulo_limpio) > 45 else titulo_limpio
+    titulo_doc = titulo_doc.capitalize()
 
-    # Persistencia en SQLite conservando el markdown original
     nueva_planificacion = Planificacion(
         titulo=titulo_doc,
         tipo_documento="Documento Pedagógico",
         area=contexto_activo,
-        grado=perfil.grado_seccion if perfil else "General",
+        grado=grado_activo, # Guardamos el grado dinámico en la BD
         contenido_markdown=respuesta_ia,
         prompt_docente=prompt,
         archivo_adjunto=nombre_archivo
@@ -213,7 +213,10 @@ async def enviar_mensaje(
             "prompt_usuario": prompt,
             "archivo_nombre": nombre_archivo,
             "respuesta_html": respuesta_html,
-            "planificacion_id": nueva_planificacion.id
+            "planificacion_id": nueva_planificacion.id,
+            "area_contexto": contexto_activo,
+            "grado_contexto": grado_activo, # Lo enviamos al historial
+            "es_nuevo": True
         }
     )
 
@@ -227,7 +230,6 @@ async def cargar_historial_detalle(
     if not plan:
         return HTMLResponse("<p class='text-red-500 text-sm'>No se encontró la planificación.</p>")
 
-    # Procesar markdown a HTML para documentos del historial
     respuesta_html = markdown.markdown(
         plan.contenido_markdown, 
         extensions=['tables', 'nl2br', 'fenced_code']
@@ -240,7 +242,8 @@ async def cargar_historial_detalle(
             "prompt_usuario": plan.prompt_docente,
             "archivo_nombre": plan.archivo_adjunto,
             "respuesta_html": respuesta_html,
-            "planificacion_id": plan.id
+            "planificacion_id": plan.id,
+            "es_nuevo": False # Al cargar historial, NO inyectamos el botón OOB
         }
     )
 
@@ -293,3 +296,51 @@ async def guardar_perfil(
         name="components/perfil_badge.html",
         context={"perfil": perfil}
     )
+
+@app.get("/descargar/word/{planificacion_id}")
+async def descargar_word(
+    planificacion_id: int,
+    session: Session = Depends(obtener_session)
+):
+    """Genera un archivo Word (.doc) a partir del Markdown de la planificación"""
+    plan = session.get(Planificacion, planificacion_id)
+    if not plan:
+        return HTMLResponse("<p>Documento no encontrado.</p>", status_code=404)
+
+    # Convertimos el markdown a HTML
+    html_body = markdown.markdown(
+        plan.contenido_markdown, 
+        extensions=['tables', 'nl2br']
+    )
+
+    # Plantilla HTML con sintaxis XML de Microsoft Office
+    # Esto asegura que Word respete las tildes (utf-8) y dibuje las tablas correctamente
+    html_content = f"""
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+        <meta charset="utf-8">
+        <title>{plan.titulo}</title>
+        <style>
+            body {{ font-family: 'Calibri', 'Arial', sans-serif; font-size: 11pt; }}
+            h1, h2, h3 {{ color: #292524; }}
+            table {{ border-collapse: collapse; width: 100%; margin-bottom: 20px; }}
+            th, td {{ border: 1px solid #000000; padding: 8px; text-align: left; vertical-align: top; }}
+            th {{ background-color: #f2f2f2; font-weight: bold; }}
+        </style>
+    </head>
+    <body>
+        {html_body}
+    </body>
+    </html>
+    """
+
+    # Limpiamos el título para que sea un nombre de archivo válido
+    nombre_seguro = "".join([c for c in plan.titulo if c.isalpha() or c.isdigit() or c==' ']).rstrip()
+    nombre_archivo = f"{nombre_seguro.replace(' ', '_')}.doc"
+
+    # Forzamos la descarga del archivo estableciendo los Headers HTTP
+    headers = {
+        "Content-Disposition": f'attachment; filename="{nombre_archivo}"'
+    }
+    
+    return Response(content=html_content, media_type="application/msword", headers=headers)

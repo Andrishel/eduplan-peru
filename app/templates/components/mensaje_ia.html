@@ -1,67 +1,145 @@
 <div class="w-full max-w-4xl mx-auto mb-10 animate-fade-in-up print:m-0 print:max-w-none">
-    
-    <!-- Mensaje del Usuario (Oculto al imprimir) -->
-    <div class="flex justify-end mb-6 print:hidden">
-        <div class="bg-zen-100 text-zen-900 px-5 py-3.5 rounded-3xl rounded-tr-sm max-w-2xl shadow-sm text-sm border border-zen-200">
-            <div class="flex items-center gap-2 mb-1.5">
-                <span class="font-extrabold text-[10px] uppercase tracking-wider text-zen-700">Tú (Docente)</span>
-                {% if archivo_nombre %}
-                    <span class="bg-white/60 text-zen-800 text-[9px] font-bold px-2 py-0.5 rounded-full border border-zen-200">📎 Adjunto</span>
-                {% endif %}
-            </div>
-            <p class="leading-relaxed">{{ prompt_usuario }}</p>
-        </div>
+
+  <!-- Mensaje del Usuario (Oculto al imprimir) -->
+  <div class="flex justify-end mb-6 print:hidden">
+    <div
+      class="bg-zen-100 text-zen-900 px-5 py-3.5 rounded-3xl rounded-tr-sm max-w-2xl shadow-sm text-sm border border-zen-200">
+      <div class="flex items-center gap-2 mb-1.5">
+        <span class="font-extrabold text-[10px] uppercase tracking-wider text-zen-700">Tú (Docente)</span>
+        {% if archivo_nombre %}
+        <span class="bg-white/60 text-zen-800 text-[9px] font-bold px-2 py-0.5 rounded-full border border-zen-200">📎
+          Adjunto</span>
+        {% endif %}
+      </div>
+      <p class="leading-relaxed">{{ prompt_usuario }}</p>
+    </div>
+  </div>
+
+  <!-- Respuesta de la IA / Documento Generado -->
+  <div
+    class="bg-white border border-calm-200 rounded-3xl shadow-sm overflow-hidden print:border-none print:shadow-none print:rounded-none">
+
+    <!-- Cabecera de herramientas (Oculta al imprimir) -->
+    <div
+      class="bg-calm-50 border-b border-calm-200 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
+      <div class="flex items-center gap-2">
+        <span
+          class="bg-emerald-100 border border-emerald-200 text-emerald-800 text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider">Normativa
+          CNEB</span>
+        <span class="text-xs font-bold text-slate-500">Planificación Generada</span>
+      </div>
+
+      <div class="flex gap-2">
+        <!-- Botón de Word con seguro de pestaña nueva -->
+        <a href="/descargar/word/{{ planificacion_id }}" target="_blank" download
+          class="px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+          Word (.doc)
+        </a>
+        <button onclick="generarPDF('{{ planificacion_id }}');"
+          class="px-4 py-2 bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+          PDF
+        </button>
+        <button onclick="window.print()"
+          class="px-4 py-2 bg-white border border-calm-200 text-slate-700 hover:bg-calm-50 hover:text-zen-700 rounded-xl text-xs font-extrabold transition shadow-sm flex items-center gap-1.5">
+          🖨️ Imprimir
+        </button>
+      </div>
     </div>
 
-    <!-- Respuesta de la IA / Documento Generado -->
-    <div class="bg-white border border-calm-200 rounded-3xl shadow-sm overflow-hidden print:border-none print:shadow-none print:rounded-none">
-        
-        <!-- Cabecera de herramientas (Oculta al imprimir) -->
-        <div class="bg-calm-50 border-b border-calm-200 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
-            <div class="flex items-center gap-2">
-                <span class="bg-emerald-100 border border-emerald-200 text-emerald-800 text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider">Normativa CNEB</span>
-                <span class="text-xs font-bold text-slate-500">Planificación Generada</span>
-            </div>
-            
-            <div class="flex gap-2">
-                <!-- Botones listos para ser conectados a librerías de exportación en el futuro -->
-                <button class="px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
-                    Word (.docx)
-                </button>
-                <button class="px-4 py-2 bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
-                    PDF
-                </button>
-                <button onclick="window.print()" class="px-4 py-2 bg-white border border-calm-200 text-slate-700 hover:bg-calm-50 hover:text-zen-700 rounded-xl text-xs font-extrabold transition shadow-sm flex items-center gap-1.5">
-                    🖨️ Imprimir
-                </button>
-            </div>
-        </div>
-        
-        <!-- Contenido Formateado -->
-        <div class="p-6 md:p-10 bg-white">
-            <!-- La clase "prose" de Tailwind da estilo automático a tablas, listas y negritas -->
-            <!-- El filtro | safe evita que Jinja2 escape el HTML -->
-            <div class="prose prose-sm md:prose-base prose-slate max-w-none 
+    <!-- Contenido Formateado -->
+    <div id="documento-imprimible-{{ planificacion_id }}" class="p-6 md:p-10 bg-white">
+      <!-- La clase "prose" de Tailwind da estilo automático a tablas, listas y negritas -->
+      <!-- El filtro | safe evita que Jinja2 escape el HTML -->
+      <div class="prose prose-sm md:prose-base prose-slate max-w-none 
                         prose-headings:text-zen-800 prose-headings:font-extrabold 
                         prose-a:text-zen-600 
                         prose-table:w-full prose-table:border-collapse prose-table:text-sm
                         prose-th:bg-calm-50 prose-th:p-3 prose-th:border prose-th:border-calm-200 prose-th:text-calm-800
                         prose-td:p-3 prose-td:border prose-td:border-calm-200 prose-td:text-slate-600
                         prose-strong:text-calm-800">
-                {{ respuesta_html | safe }}
-            </div>
-        </div>
-
+        {{ respuesta_html | safe }}
+      </div>
     </div>
+
+  </div>
 </div>
+
+<!-- Inyección reactiva al historial lateral (HTMX Out of Band) -->
+<!-- SOLO se ejecuta si es un mensaje recién creado -->
+{% if es_nuevo %}
+  <!-- OOB directo al ID del index -->
+  <button hx-swap-oob="afterbegin:#lista-historial" hx-get="/historial/{{ planificacion_id }}" hx-target="#area-documento"
+    class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-calm-50 transition group flex flex-col gap-0.5 border-l-2 border-zen-600 bg-zen-50/40 mb-1">
+    
+    <!-- Título: El prompt del usuario capitalizado -->
+    <span class="text-xs font-extrabold text-slate-800 truncate group-hover:text-zen-700 transition">
+        {{ prompt_usuario[:45] | capitalize }}{% if prompt_usuario|length > 45 %}...{% endif %}
+    </span>
+    
+    <!-- Subtítulo: Área y Grado -->
+    <span class="text-[10px] text-slate-500 truncate font-semibold">
+        {{ area_contexto }} • {{ grado_contexto }}
+    </span>
+  </button>
+{% endif %}
 
 <!-- Estilo CSS específico para que al imprimir no salga la barra lateral ni el menú -->
 <style>
-    @media print {
-        body { background-color: white; overflow: visible !important; }
-        aside, header, form, #pildoras-atajos { display: none !important; }
-        main { display: block !important; padding: 0 !important; overflow: visible !important; }
-        #area-documento { display: block !important; padding: 0 !important; overflow: visible !important; height: auto !important; }
-        .prose { max-width: 100% !important; font-size: 12pt !important; }
+  @media print {
+    body {
+      background-color: white;
+      overflow: visible !important;
     }
+
+    aside,
+    header,
+    form,
+    #pildoras-atajos {
+      display: none !important;
+    }
+
+    main {
+      display: block !important;
+      padding: 0 !important;
+      overflow: visible !important;
+    }
+
+    #area-documento {
+      display: block !important;
+      padding: 0 !important;
+      overflow: visible !important;
+      height: auto !important;
+    }
+
+    .prose {
+      max-width: 100% !important;
+      font-size: 12pt !important;
+    }
+    /* Reglas MÁGICAS para evitar que las tablas se rompan en PDF */
+    table { page-break-inside: auto; width: 100%; }
+    tr    { page-break-inside: avoid; page-break-after: auto; }
+    thead { display: table-header-group; }
+    tfoot { display: table-footer-group; }
+  }
 </style>
+
+<!-- Librería para generar PDFs desde el navegador -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+  function generarPDF(id) {
+    const elemento = document.getElementById('documento-imprimible-' + id);
+    
+    // Ocultar temporalmente bordes o sombras si lo deseas para el PDF
+    const opciones = {
+      margin:       [10, 10, 15, 10], // Márgenes: Arriba, Derecha, Abajo, Izquierda
+      filename:     'Sesion_EduPlan_' + id + '.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak:    { mode: ['css', 'legacy'] } // <-http://127.0.0.1:8000/docs-- ¡Añadir esta línea!
+    };
+
+    html2pdf().set(opciones).from(elemento).save();
+  }
+</script>
