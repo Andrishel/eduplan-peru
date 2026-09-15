@@ -1,0 +1,25 @@
+<div id="sidebar-perfil-container" class="p-3 border-t border-slate-200">
+  <button 
+    type="button" 
+    hx-get="/modal-perfil" 
+    hx-target="#modal-slot" 
+    hx-swap="innerHTML"
+    class="w-full text-left flex items-center gap-3 p-2 rounded-xl bg-slate-50 hover:bg-blue-50 border border-slate-100 transition group">
+    <div class="h-9 w-9 rounded-full bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center font-bold text-blue-800 text-sm shrink-0 transition">
+      {% if perfil and perfil.nombre_ie %}
+        {{ perfil.nombre_ie[:2]|upper }}
+      {% else %}
+        IE
+      {% endif %}
+    </div>
+    <div class="truncate flex-1">
+      <p class="text-xs font-bold text-slate-800 group-hover:text-blue-900 truncate">
+        {{ perfil.nombre_ie if perfil else 'I.E. Emblemática' }}
+      </p>
+      <p class="text-[10px] text-slate-400 font-medium truncate">
+        {{ perfil.nombre_docente if perfil else 'Docente Activo' }} • {{ perfil.ugel if perfil else 'UGEL 01' }}
+      </p>
+    </div>
+    <span class="text-slate-400 group-hover:text-blue-700 text-xs">⚙️</span>
+  </button>
+</div>

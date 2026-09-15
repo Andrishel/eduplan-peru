@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espacio de Trabajo | EduPlan Perú</title>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <!-- HTMX para recargas parciales fluidas -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Nunito', 'sans-serif'] },
+                    colors: {
+                        calm: { 50: '#fafaf9', 100: '#f5f5f4', 200: '#e7e5e4', 800: '#292524' },
+                        zen: { 50: '#f0fdfa', 100: '#ccfbf1', 200: '#99f6e4', 600: '#0d9488', 700: '#0f766e', 800: '#115e59' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Personalización del scrollbar para que no rompa la estética Zen */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #e7e5e4;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d6d3d1;
+        }
+    </style>
+</head>
+
+<body
+    class="flex h-screen bg-calm-50 font-sans text-calm-800 antialiased selection:bg-zen-600 selection:text-white overflow-hidden">
+
+    <!-- BARRA LATERAL (Historial y Perfil) -->
+    <aside class="w-72 bg-white border-r border-calm-200 flex flex-col h-full shadow-sm z-10 hidden md:flex">
+
+        <!-- Logo superior -->
+        <div class="h-16 flex items-center px-6 border-b border-calm-100 shrink-0">
+            <div class="flex items-center gap-2.5">
+                <div
+                    class="flex h-8 w-8 items-center justify-center rounded-xl bg-zen-700 text-sm font-black text-white shadow-sm">
+                    EP</div>
+                <span class="text-base font-black tracking-tight text-calm-800">EduPlan Perú</span>
+            </div>
+        </div>
+
+        <!-- Botón Nuevo Documento -->
+        <div class="p-4 shrink-0">
+            <button onclick="window.location.reload()"
+                class="w-full flex items-center justify-center gap-2 rounded-xl bg-white border border-calm-200 py-2.5 text-sm font-bold text-slate-600 hover:border-zen-600 hover:text-zen-700 transition shadow-sm group">
+                <span class="text-lg group-hover:rotate-90 transition-transform duration-300">+</span> Nueva
+                planificación
+            </button>
+        </div>
+
+        <!-- Lista de Historial -->
+        <div class="flex-1 overflow-y-auto px-4 pb-4">
+            <h3 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-3 px-2">Historial Reciente
+            </h3>
+            <div class="space-y-1">
+                {% if planificaciones %}
+                {% for plan in planificaciones %}
+                <button hx-get="/historial/{{ plan.id }}" hx-target="#area-documento"
+                    class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-calm-50 transition group flex flex-col gap-0.5">
+                    <span class="text-xs font-bold text-slate-700 truncate group-hover:text-zen-700 transition">{{
+                        plan.titulo }}</span>
+                    <span class="text-[10px] text-slate-400 truncate">{{ plan.area }} • {{ plan.grado }}</span>
+                </button>
+                {% endfor %}
+                {% else %}
+                <div class="px-2 text-xs text-slate-400 italic">No hay documentos aún.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Badge de Perfil (Bajo) -->
+        <div class="p-4 border-t border-calm-100 shrink-0 bg-calm-50/50">
+            <div class="flex items-center gap-3">
+                <div
+                    class="h-9 w-9 rounded-full bg-zen-100 flex items-center justify-center text-zen-700 font-bold border border-zen-200 shrink-0">
+                    {{ perfil.nombre_docente[0:1] if perfil else 'U' }}
+                </div>
+                <div class="flex flex-col overflow-hidden">
+                    <span class="text-xs font-extrabold text-slate-700 truncate">{{ perfil.nombre_docente if perfil else
+                        'Usuario' }}</span>
+                    <span class="text-[10px] text-slate-500 truncate">{{ perfil.nombre_ie if perfil else 'Sin
+                        Institución' }}</span>
+                </div>
+                <button class="ml-auto text-slate-400 hover:text-zen-700 transition" title="Configuración">
+                    ⚙️
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ÁREA PRINCIPAL -->
+    <main class="flex-1 flex flex-col h-full relative">
+
+        <!-- Cabecera de Contexto (Dropdown de Cursos) -->
+        <header
+            class="h-16 bg-white/80 backdrop-blur-md border-b border-calm-200 flex items-center justify-between px-6 shrink-0 z-10 shadow-sm">
+
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wide hidden sm:block">Contexto
+                    Activo:</span>
+
+                <!-- Selector Dinámico de Áreas Curriculares -->
+                <div class="relative">
+                    <select id="selector-contexto" name="contexto_activo"
+                        class="appearance-none bg-zen-50 border border-zen-200 rounded-xl pl-4 pr-10 py-1.5 text-sm font-extrabold text-zen-800 focus:ring-2 focus:ring-zen-600 focus:outline-none cursor-pointer transition hover:bg-zen-100 shadow-sm">
+                        {% set areas = perfil.area_curricular.split(',') if perfil and perfil.area_curricular else
+                        ['Gestión General'] %}
+                        {% for area in areas %}
+                        <option value="{{ area.strip() }}">{{ area.strip() }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-zen-700">
+                        ▾
+                    </div>
+                </div>
+            </div>
+
+            <!-- Indicador de Estado -->
+            <div class="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full">
+                <div class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span class="text-[10px] font-extrabold text-emerald-700 uppercase">CNEB 2026 Activo</span>
+            </div>
+        </header>
+
+        <!-- Zona del Documento / Chat (Scrollable) -->
+        <div id="area-documento" class="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col items-center">
+
+            <!-- Estado Vacío Inicial -->
+            <div class="w-full max-w-3xl mt-10 md:mt-20 text-center">
+                <div
+                    class="h-16 w-16 mx-auto bg-calm-100 rounded-3xl flex items-center justify-center text-3xl mb-6 shadow-inner">
+                    ✨
+                </div>
+                <h2 class="text-2xl font-extrabold text-calm-800 mb-2">¿Qué planificaremos hoy?</h2>
+                <p class="text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+                    Tus documentos estarán alineados automáticamente al área seleccionada arriba y a los datos de tu
+                    institución.
+                </p>
+            </div>
+
+        </div>
+
+        <!-- Zona Fija de Entrada de Texto (Bottom) -->
+        <div class="w-full bg-white border-t border-calm-200 shrink-0 print:hidden">
+            <div class="w-full max-w-4xl mx-auto p-4 sm:p-6">
+
+                <!-- Píldoras de Atajos Rápidos -->
+                <div class="flex gap-2 overflow-x-auto pb-3 mb-1 snap-x scrollbar-hide" id="pildoras-atajos">
+                    <button
+                        onclick="insertarPrompt('Crea una sesión de aprendizaje de 90 minutos usando los procesos pedagógicos.')"
+                        class="snap-start shrink-0 rounded-full border border-calm-200 bg-calm-50 px-4 py-1.5 text-xs font-bold text-slate-600 hover:border-zen-600 hover:text-zen-700 transition">📝
+                        Sesión 90 min</button>
+                    <button
+                        onclick="insertarPrompt('Elabora una rúbrica de evaluación formativa con escala AD, A, B, C.')"
+                        class="snap-start shrink-0 rounded-full border border-calm-200 bg-calm-50 px-4 py-1.5 text-xs font-bold text-slate-600 hover:border-zen-600 hover:text-zen-700 transition">📊
+                        Rúbrica CNEB</button>
+                    <button onclick="insertarPrompt('Redacta un oficio formal dirigido a la UGEL justificando...')"
+                        class="snap-start shrink-0 rounded-full border border-calm-200 bg-calm-50 px-4 py-1.5 text-xs font-bold text-slate-600 hover:border-zen-600 hover:text-zen-700 transition">🏢
+                        Oficio UGEL</button>
+                    <button
+                        onclick="insertarPrompt('Genera una situación significativa contextualizada para mis estudiantes sobre...')"
+                        class="snap-start shrink-0 rounded-full border border-calm-200 bg-calm-50 px-4 py-1.5 text-xs font-bold text-slate-600 hover:border-zen-600 hover:text-zen-700 transition">🌍
+                        Situación</button>
+                </div>
+
+                <!-- Formulario Principal -->
+                <form hx-post="/enviar-mensaje" hx-include="#selector-contexto" hx-target="#area-documento"
+                    hx-indicator="#indicador-carga"
+                    hx-on="htmx:afterRequest: if(event.detail.successful) { this.reset(); document.getElementById('prompt-input').style.height = 'auto'; }"
+                    enctype="multipart/form-data"
+                    class="relative flex items-end gap-3 bg-white rounded-2xl border border-calm-200 p-2 shadow-sm focus-within:border-zen-600 focus-within:ring-4 focus-within:ring-zen-50 transition-all">
+
+                    <!-- Botón Adjuntar Archivo -->
+                    <label
+                        class="cursor-pointer p-3 text-slate-400 hover:text-zen-700 hover:bg-zen-50 rounded-xl transition shrink-0">
+                        <input type="file" name="foto" class="hidden" accept="image/*, .pdf">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13">
+                            </path>
+                        </svg>
+                    </label>
+
+                    <!-- Input de Texto Expandible -->
+                    <textarea id="prompt-input" name="prompt" rows="1"
+                        placeholder="Describe lo que necesitas pedagógicamente..." required
+                        class="w-full max-h-40 resize-none border-none bg-transparent py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-0"></textarea>
+
+                    <!-- Botón Enviar -->
+                    <button type="submit"
+                        class="p-3 text-white bg-zen-700 hover:bg-zen-800 rounded-xl transition shadow-md shrink-0 mb-0.5 mr-0.5">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                    </button>
+                </form>
+
+                <!-- Indicador de Carga -->
+                <div id="indicador-carga"
+                    class="htmx-indicator flex items-center justify-center gap-2 text-xs font-bold text-zen-700 mt-3">
+                    <span class="animate-spin text-lg">🌀</span> Procesando normativa y redactando...
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Formulario Principal -->
+        <form hx-post="/enviar-mensaje" hx-include="#selector-contexto" hx-target="#area-documento"
+            hx-indicator="#indicador-carga"
+            hx-on="htmx:afterRequest: if(event.detail.successful) { this.reset(); document.getElementById('prompt-input').style.height = 'auto'; }"
+            enctype="multipart/form-data"
+            class="relative flex items-end gap-3 bg-white rounded-2xl border border-calm-200 p-2 shadow-sm focus-within:border-zen-600 focus-within:ring-4 focus-within:ring-zen-50 transition-all">
+
+            <!-- Indicador de Carga (Oculto por HTMX) -->
+            <div id="indicador-carga"
+                class="htmx-indicator flex items-center justify-center gap-2 text-xs font-bold text-zen-700 mt-3">
+                <span class="animate-spin text-lg">🌀</span> Procesando normativa y redactando...
+            </div>
+
+            </div>
+            </div>
+
+    </main>
+
+    <!-- Lógica UI simple -->
+    <script>
+        // Auto-expandir el textarea
+        const textarea = document.getElementById('prompt-input');
+        textarea.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight < 160 ? this.scrollHeight : 160) + 'px';
+        });
+
+        // Insertar texto desde las píldoras
+        function insertarPrompt(texto) {
+            textarea.value = texto;
+            textarea.focus();
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+    </script>
+</body>
+
+</html>
