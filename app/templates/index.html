@@ -23,7 +23,6 @@
         }
     </script>
     <style>
-        /* Personalización del scrollbar para que no rompa la estética Zen */
         ::-webkit-scrollbar {
             width: 6px;
         }
@@ -81,17 +80,23 @@
         <div class="p-4 border-t border-calm-100 shrink-0 bg-calm-50/50">
             <div class="flex items-center gap-3">
                 <div
-                    class="h-9 w-9 rounded-full bg-zen-100 flex items-center justify-center text-zen-700 font-bold border border-zen-200 shrink-0">
-                    {{ perfil.nombre_docente[0:1] if perfil else 'U' }}
+                    class="h-9 w-9 rounded-full bg-zen-100 flex items-center justify-center text-zen-700 font-bold border border-zen-200 shrink-0 overflow-hidden">
+                    {% if perfil and perfil.logo_url %}
+                    <img src="/static/uploads/{{ perfil.logo_url }}" alt="Logo" class="h-full w-full object-cover">
+                    {% else %}
+                    {{ perfil.nombre_docente[0:1] if perfil and perfil.nombre_docente else (usuario.nombre_completo[0:1]
+                    if usuario else 'U') }}
+                    {% endif %}
                 </div>
                 <div class="flex flex-col overflow-hidden">
-                    <span class="text-xs font-extrabold text-slate-700 truncate">{{ perfil.nombre_docente if perfil else
-                        'Usuario' }}</span>
+                    <span class="text-xs font-extrabold text-slate-700 truncate">{{ perfil.nombre_docente if perfil and
+                        perfil.nombre_docente else (usuario.nombre_completo if usuario else 'Docente') }}</span>
                     <span class="text-[10px] text-slate-500 truncate">{{ perfil.nombre_ie if perfil else 'Sin
                         Institución' }}</span>
                 </div>
                 <button hx-get="/modal-perfil" hx-target="body" hx-swap="beforeend"
-                    class="p-2 ml-auto text-slate-400 hover:text-zen-700 transition">
+                    class="p-2 ml-auto text-slate-400 hover:text-zen-700 transition"
+                    title="Configurar instituciones y perfil">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
@@ -106,17 +111,22 @@
 
     <!-- ÁREA PRINCIPAL -->
     <main class="flex-1 flex flex-col h-full relative">
-
-        <!-- Cabecera Superior: Contexto Institucional y Filtros -->
+        <!-- Cabecera Superior: Contexto Institucional Dinámico y Filtros en Cascada -->
         <header
             class="bg-white border-b border-calm-200 h-16 flex items-center justify-between px-6 shrink-0 print:hidden z-10">
             <div class="flex items-center gap-3 w-full max-w-5xl">
-                <!-- Nombre de la I.E. activa -->
-                <div
-                    class="flex items-center gap-1.5 px-2.5 py-1 bg-calm-50 border border-calm-200 rounded-xl shrink-0">
+
+                <!-- Selector Siempre Activo de Institución -->
+                <div class="flex items-center gap-1.5 bg-calm-50 border border-calm-200 rounded-xl px-2 py-1 shrink-0">
                     <span class="text-xs">🏫</span>
-                    <span class="text-xs font-bold text-slate-700 truncate max-w-[140px] sm:max-w-none">{{
-                        perfil.nombre_ie if perfil else 'Sin I.E.' }}</span>
+                    <select onchange="window.location.href='/app?institucion_id=' + this.value"
+                        class="bg-transparent text-slate-700 text-xs font-bold outline-none cursor-pointer">
+                        {% for inst in instituciones %}
+                        <option value="{{ inst.id }}" {% if perfil and inst.id==perfil.id %}selected{% endif %}>
+                            {{ inst.nombre_ie }}
+                        </option>
+                        {% endfor %}
+                    </select>
                 </div>
 
                 <div class="h-4 w-px bg-calm-200 hidden sm:block"></div>
@@ -124,42 +134,35 @@
                 <span
                     class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider hidden md:block">Contexto:</span>
 
+                <!-- Selectores Dinámicos en Cascada -->
                 <div class="flex gap-2 items-center" id="selector-contexto-dual">
                     <!-- Selector de Área -->
-                    <select name="contexto_activo" hx-get="/filtrar-historial" hx-include="#selector-contexto-dual"
-                        hx-target="#lista-historial"
+                    <select name="contexto_activo" hx-get="/api/selector-grados?institucion_id={{ perfil.id }}"
+                        hx-target="#contenedor-grado-seccion" hx-trigger="change"
                         class="bg-calm-50 border border-calm-200 text-zen-800 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
-                        <option value="Comunicación">Comunicación</option>
-                        <option value="Matemática">Matemática</option>
-                        <option value="Ciencias Sociales">Ciencias Sociales</option>
-                        <option value="Ciencia y Tecnología">Ciencia y Tecnología</option>
-                        <option value="Educación Física">Educación Física</option>
-                        <option value="Arte y Cultura">Arte y Cultura</option>
-                        <option value="Inglés">Inglés</option>
-                        <option value="DPCC">DPCC</option>
+                        {% for a in areas %}
+                        <option value="{{ a }}">{{ a }}</option>
+                        {% endfor %}
                     </select>
 
-                    <!-- Selector de Grado -->
-                    <select name="grado_activo" hx-get="/filtrar-historial" hx-include="#selector-contexto-dual"
-                        hx-target="#lista-historial"
-                        class="bg-calm-50 border border-calm-200 text-zen-800 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
-                        <option value="1° Secundaria">1° Secundaria</option>
-                        <option value="2° Secundaria">2° Secundaria</option>
-                        <option value="3° Secundaria">3° Secundaria</option>
-                        <option value="4° Secundaria">4° Secundaria</option>
-                        <option value="5° Secundaria">5° Secundaria</option>
-                    </select>
+                    <!-- Contenedor dinámico Grado + Sección -->
+                    <div id="contenedor-grado-seccion" class="flex gap-2 items-center">
+                        <select name="grado_activo"
+                            hx-get="/api/selector-secciones?institucion_id={{ perfil.id }}&contexto_activo={{ areas[0] if areas else 'General' }}"
+                            hx-target="next select" hx-trigger="change"
+                            class="bg-calm-50 border border-calm-200 text-zen-800 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
+                            {% for g in grados %}
+                            <option value="{{ g }}">{{ g }}</option>
+                            {% endfor %}
+                        </select>
 
-                    <!-- Selector de Sección -->
-                    <select name="seccion_activa" hx-get="/filtrar-historial" hx-include="#selector-contexto-dual"
-                        hx-target="#lista-historial"
-                        class="bg-calm-50 border border-calm-200 text-zen-800 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
-                        <option value="A">Secc. A</option>
-                        <option value="B">Secc. B</option>
-                        <option value="C">Secc. C</option>
-                        <option value="D">Secc. D</option>
-                        <option value="Única">Única</option>
-                    </select>
+                        <select name="seccion_activa"
+                            class="bg-calm-50 border border-calm-200 text-zen-800 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
+                            {% for s in secciones %}
+                            <option value="{{ s }}">Secc. {{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Botón toggle de alternancia -->
@@ -255,34 +258,16 @@
             </div>
         </div>
 
-        <!-- Formulario Principal -->
-        <form hx-post="/enviar-mensaje" hx-include="#selector-contexto-dual" hx-target="#area-documento"
-            hx-indicator="#indicador-carga"
-            hx-on="htmx:afterRequest: if(event.detail.successful) { this.reset(); document.getElementById('prompt-input').style.height = 'auto'; }"
-            enctype="multipart/form-data"
-            class="relative flex items-end gap-3 bg-white rounded-2xl border border-calm-200 p-2 shadow-sm focus-within:border-zen-600 focus-within:ring-4 focus-within:ring-zen-50 transition-all">
-
-            <!-- Indicador de Carga (Oculto por HTMX) -->
-            <div id="indicador-carga"
-                class="htmx-indicator flex items-center justify-center gap-2 text-xs font-bold text-zen-700 mt-3">
-                <span class="animate-spin text-lg">🌀</span> Procesando normativa y redactando...
-            </div>
-
-            </div>
-            </div>
-
     </main>
 
     <!-- Lógica UI simple -->
     <script>
-        // Auto-expandir el textarea
         const textarea = document.getElementById('prompt-input');
         textarea.addEventListener('input', function () {
             this.style.height = 'auto';
             this.style.height = (this.scrollHeight < 160 ? this.scrollHeight : 160) + 'px';
         });
 
-        // Insertar texto desde las píldoras
         function insertarPrompt(texto) {
             textarea.value = texto;
             textarea.focus();
@@ -290,7 +275,8 @@
             textarea.style.height = textarea.scrollHeight + 'px';
         }
     </script>
-    <!-- Librería MathJax para renderizar ecuaciones matemáticas -->
+
+    <!-- Librería MathJax -->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>
@@ -301,8 +287,6 @@
             }
         };
 
-        // Escuchador de HTMX: Le dice a MathJax que vuelva a leer la pantalla 
-        // cada vez que la IA nos devuelve un mensaje nuevo.
         document.body.addEventListener('htmx:afterSwap', function (evt) {
             if (window.MathJax) {
                 window.MathJax.typesetPromise();

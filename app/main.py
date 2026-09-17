@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
 
 from app.database import crear_db_y_tablas, obtener_session
-from app.models import PerfilInstitucional, Planificacion, Usuario
+from app.models import PerfilInstitucional, Planificacion, Usuario, CargaAcademica
 from app.services.gemini_service import responder_consulta
 from app.services.auth_service import (
     hashear_password, 
@@ -53,50 +53,137 @@ async def obtener_usuario_actual(
 
 @app.get("/", response_class=HTMLResponse)
 async def landing_page(request: Request):
-    """Renderiza la portada comercial (Landing Page)"""
-    return templates.TemplateResponse(
-        request=request, 
-        name="landing.html"
-    )
+    return templates.TemplateResponse(request=request, name="landing.html")
 
 @app.get("/auth", response_class=HTMLResponse)
 async def pagina_auth(request: Request):
-    """Renderiza la pantalla de Registro / Inicio de sesión"""
-    return templates.TemplateResponse(
-        request=request, 
-        name="auth.html"
-    )
+    return templates.TemplateResponse(request=request, name="auth.html")
 
 @app.get("/app", response_class=HTMLResponse)
 async def workspace(
     request: Request,
+    institucion_id: Optional[int] = None,
     usuario: Optional[Usuario] = Depends(obtener_usuario_actual),
     session: Session = Depends(obtener_session)
 ):
-    """Renderiza el espacio de trabajo protegido"""
     if not usuario:
         return RedirectResponse(url="/auth", status_code=status.HTTP_303_SEE_OTHER)
 
-    perfil = session.exec(
+    instituciones = session.exec(
         select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)
-    ).first()
+    ).all()
+
+    if not instituciones:
+        return RedirectResponse(url="/onboarding", status_code=status.HTTP_303_SEE_OTHER)
+
+    # Determinar institución activa
+    perfil_activo = None
+    if institucion_id:
+        perfil_activo = session.get(PerfilInstitucional, institucion_id)
     
+    # Si no se envió ID, priorizar un colegio real sobre el Espacio Libre
+    if not perfil_activo:
+        colegio_real = next((i for i in instituciones if i.nombre_ie != "Espacio Personal / Libre"), None)
+        perfil_activo = colegio_real if colegio_real else instituciones[0]
+
+    # Cargas de esta institución específica
+    cargas = session.exec(
+        select(CargaAcademica).where(CargaAcademica.institucion_id == perfil_activo.id)
+    ).all()
+
+    # Si es colegio real con cargas
+    if cargas:
+        areas_disponibles = sorted(list(set(c.area for c in cargas)))
+        primera_area = areas_disponibles[0]
+        cargas_area = [c for c in cargas if c.area == primera_area]
+        grados_disponibles = sorted(list(set(c.grado for c in cargas_area)))
+        primer_grado = grados_disponibles[0]
+        secciones_disponibles = sorted(list(set(c.seccion for c in cargas_area if c.grado == primer_grado)))
+    else:
+        areas_disponibles = ["General"]
+        grados_disponibles = ["Único"]
+        secciones_disponibles = ["Única"]
+
     planificaciones = session.exec(
         select(Planificacion)
         .where(Planificacion.usuario_id == usuario.id)
         .order_by(Planificacion.id.desc())
         .limit(15)
     ).all()
-    
+
     return templates.TemplateResponse(
         request=request, 
         name="index.html",
         context={
             "usuario": usuario,
-            "perfil": perfil,
+            "instituciones": instituciones,
+            "perfil": perfil_activo,
+            "areas": areas_disponibles,
+            "grados": grados_disponibles,
+            "secciones": secciones_disponibles,
             "planificaciones": planificaciones
         }
     )
+
+# Endpoint HTMX: cuando cambia el Área o la Institución
+@app.get("/api/selector-grados", response_class=HTMLResponse)
+async def selector_grados(
+    institucion_id: int,
+    contexto_activo: str,
+    session: Session = Depends(obtener_session)
+):
+    cargas = session.exec(
+        select(CargaAcademica).where(
+            CargaAcademica.institucion_id == institucion_id,
+            CargaAcademica.area == contexto_activo
+        )
+    ).all()
+    
+    grados = sorted(list(set(c.grado for c in cargas))) if cargas else ["Único"]
+    primer_grado = grados[0]
+    secciones = sorted(list(set(c.seccion for c in cargas if c.grado == primer_grado))) if cargas else ["Única"]
+
+    options_grados = "".join([f'<option value="{g}">{g}</option>' for g in grados])
+    options_secciones = "".join([f'<option value="{s}">Secc. {s}</option>' for s in secciones])
+
+    return HTMLResponse(f"""
+        <select name="grado_activo" 
+                hx-get="/api/selector-secciones?institucion_id={institucion_id}&contexto_activo={contexto_activo}" 
+                hx-target="next select" 
+                hx-trigger="change"
+                class="bg-calm-50 border border-calm-200 text-zen-800 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
+            {options_grados}
+        </select>
+        <select name="seccion_activa" 
+                class="bg-calm-50 border border-calm-200 text-zen-800 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
+            {options_secciones}
+        </select>
+    """)
+
+# Endpoint HTMX: cuando cambia el Grado
+@app.get("/api/selector-secciones", response_class=HTMLResponse)
+async def selector_secciones(
+    institucion_id: int,
+    contexto_activo: str,
+    grado_activo: str,
+    session: Session = Depends(obtener_session)
+):
+    cargas = session.exec(
+        select(CargaAcademica).where(
+            CargaAcademica.institucion_id == institucion_id,
+            CargaAcademica.area == contexto_activo,
+            CargaAcademica.grado == grado_activo
+        )
+    ).all()
+    
+    secciones = sorted(list(set(c.seccion for c in cargas))) if cargas else ["Única"]
+    options = "".join([f'<option value="{s}">Secc. {s}</option>' for s in secciones])
+    
+    return HTMLResponse(f"""
+        <select name="seccion_activa" class="bg-calm-50 border border-calm-200 text-zen-800 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
+            {options}
+        </select>
+    """)
 
 # ==========================================
 # RUTAS DE REGISTRO Y LOGIN
@@ -125,16 +212,8 @@ async def registro(
     session.commit()
     session.refresh(nuevo_usuario)
 
-    # Crear perfil institucional por defecto asociado al usuario
-    nuevo_perfil = PerfilInstitucional(
-        usuario_id=nuevo_usuario.id,
-        nombre_docente=nuevo_usuario.nombre_completo
-    )
-    session.add(nuevo_perfil)
-    session.commit()
-
     token = crear_token_sesion(nuevo_usuario.id)
-    response = RedirectResponse(url="/app", status_code=status.HTTP_303_SEE_OTHER)
+    response = RedirectResponse(url="/onboarding", status_code=status.HTTP_303_SEE_OTHER) 
     response.set_cookie(key="session_token", value=token, httponly=True, max_age=604800)
     return response
 
@@ -151,7 +230,7 @@ async def login(
         return HTMLResponse("<p class='text-red-500 text-xs font-bold text-center mt-2'>Credenciales incorrectas.</p>", status_code=401)
 
     token = crear_token_sesion(usuario.id)
-    response = RedirectResponse(url="/app", status_code=status.HTTP_303_SEE_OTHER)
+    response = RedirectResponse(url="/onboarding", status_code=status.HTTP_303_SEE_OTHER) 
     response.set_cookie(key="session_token", value=token, httponly=True, max_age=604800)
     return response
 
@@ -183,53 +262,96 @@ async def onboarding_view(
 
 @app.post("/completar-onboarding")
 async def completar_onboarding(
-    nombre_ie: str = Form(...),
-    ugel: str = Form(...),
-    lema: Optional[str] = Form(None),
-    nombre_docente: str = Form(...),
-    nivel_educativo: Optional[List[str]] = Form(None),
-    area_curricular: Optional[List[str]] = Form(None),
-    grado_seccion: Optional[str] = Form(None),
-    enfoque_institucional: Optional[str] = Form(None),
+    request: Request,
     usuario: Optional[Usuario] = Depends(obtener_usuario_actual),
     session: Session = Depends(obtener_session)
 ):
     if not usuario:
         return RedirectResponse(url="/auth", status_code=status.HTTP_303_SEE_OTHER)
 
-    perfil = session.exec(select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)).first()
-    if not perfil:
-        perfil = PerfilInstitucional(usuario_id=usuario.id)
-        session.add(perfil)
-        
-    perfil.nombre_ie = nombre_ie.strip()
-    perfil.ugel = ugel.strip()
-    perfil.lema = lema.strip() if lema else None
-    perfil.nombre_docente = nombre_docente.strip()
+    form_data = await request.form()
     
-    if nivel_educativo:
-        niveles_limpios = [n.strip() for n in nivel_educativo if n.strip()]
-        perfil.nivel_educativo = ", ".join(niveles_limpios) if niveles_limpios else "No especificado"
-    else:
-        perfil.nivel_educativo = "No especificado"
-
-    if area_curricular:
-        areas_limpias = [a.strip() for a in area_curricular if a.strip()]
-        perfil.area_curricular = ", ".join(areas_limpias) if areas_limpias else "Gestión Institucional"
-    else:
-        perfil.area_curricular = "Gestión Institucional"
-    
-    if grado_seccion and grado_seccion.strip():
-        perfil.grado_seccion = grado_seccion.strip()
-    else:
-        perfil.grado_seccion = "Toda la Institución / General"
-
-    perfil.enfoque_institucional = enfoque_institucional.strip() if enfoque_institucional else None
-
-    session.add(perfil)
+    # Limpiar instituciones previas para evitar duplicados si rehace el onboarding
+    colegios_previos = session.exec(select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)).all()
+    for col in colegios_previos:
+        cargas = session.exec(select(CargaAcademica).where(CargaAcademica.institucion_id == col.id)).all()
+        for c in cargas: session.delete(c)
+        session.delete(col)
     session.commit()
-    session.refresh(perfil)
 
+    # 1. Espacio Libre / Tutorías
+    if form_data.get("es_independiente") == "on":
+        espacio_libre = PerfilInstitucional(
+            usuario_id=usuario.id,
+            nombre_ie="Espacio Personal / Libre",
+            ugel="Sin formato oficial",
+            nombre_docente=usuario.nombre_completo,
+            nivel_educativo="General",
+            area_curricular="General",
+            grado_seccion="General"
+        )
+        session.add(espacio_libre)
+
+    # 2. Procesar Colegios Dinámicos
+    num_colegios_str = form_data.get("num_colegios", "0")
+    try:
+        num_colegios = int(num_colegios_str)
+    except ValueError:
+        num_colegios = 0
+
+    for i in range(1, num_colegios + 1):
+        nombre_ie = form_data.get(f"colegio_{i}_nombre")
+        if not nombre_ie:
+            continue
+
+        ugel = form_data.get(f"colegio_{i}_ugel", "")
+        logo_file = form_data.get(f"colegio_{i}_logo")
+        nombre_logo = None
+        
+        if logo_file and getattr(logo_file, "filename", ""):
+            nombre_logo = f"logo_usr{usuario.id}_col{i}_{logo_file.filename}"
+            ruta = os.path.join(UPLOAD_DIR, nombre_logo)
+            with open(ruta, "wb") as buffer:
+                shutil.copyfileobj(logo_file.file, buffer)
+
+        nuevo_colegio = PerfilInstitucional(
+            usuario_id=usuario.id,
+            nombre_ie=nombre_ie.strip(),
+            ugel=ugel.strip(),
+            nombre_docente=usuario.nombre_completo,
+            logo_url=nombre_logo
+        )
+        session.add(nuevo_colegio)
+        session.commit()
+        session.refresh(nuevo_colegio)
+
+        # 3. Procesar Bloques de Carga Académica y Cruce Cartesiano
+        bloques = form_data.getlist(f"colegio_{i}_bloques[]")
+        for bId in bloques:
+            nivel = form_data.get(f"col_{i}_b{bId}_nivel", "Secundaria")
+            
+            # Verificar si seleccionó "Otro"
+            area = form_data.get(f"col_{i}_b{bId}_area", "")
+            if area == "Otro":
+                area = form_data.get(f"col_{i}_b{bId}_area_otro", "Otro Curso").strip()
+            
+            grados = form_data.getlist(f"col_{i}_b{bId}_grados[]")
+            for g in grados:
+                secciones = form_data.getlist(f"col_{i}_b{bId}_g_{g}_secciones[]")
+                if not secciones:
+                    secciones = ["Única"]
+                
+                for s in secciones:
+                    carga = CargaAcademica(
+                        institucion_id=nuevo_colegio.id,
+                        nivel=nivel,
+                        area=area,
+                        grado=g.strip(),
+                        seccion=s.strip().upper()
+                    )
+                    session.add(carga)
+            
+    session.commit()
     return RedirectResponse(url="/app", status_code=status.HTTP_303_SEE_OTHER)
 
 # ==========================================

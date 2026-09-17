@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuración de Perfil | EduPlan Perú</title>
+    <title>Configuración Curricular | EduPlan Perú</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -14,299 +13,248 @@
                     fontFamily: { sans: ['Nunito', 'sans-serif'] },
                     colors: {
                         calm: { 50: '#fafaf9', 100: '#f5f5f4', 200: '#e7e5e4', 800: '#292524' },
-                        zen: { 50: '#f0fdfa', 100: '#ccfbf1', 200: '#99f6e4', 600: '#0d9488', 700: '#0f766e', 800: '#115e59' }
+                        zen: { 50: '#f0fdfa', 100: '#ccfbf1', 600: '#0d9488', 700: '#0f766e', 800: '#115e59' }
                     }
                 }
             }
         }
     </script>
-    <style>
-        body {
-            background-color: #fafaf9;
-            color: #292524;
-        }
-
-        .checkbox-btn input:checked+div {
-            background-color: #0f766e;
-            color: white;
-            border-color: #0f766e;
-        }
-    </style>
 </head>
+<body class="min-h-screen bg-calm-50 text-calm-800 flex items-center justify-center p-4 sm:p-8">
 
-<body class="min-h-screen flex flex-col justify-between selection:bg-zen-600 selection:text-white">
-
-    <header class="w-full max-w-4xl mx-auto px-6 h-20 flex items-center justify-between">
-        <div class="flex items-center gap-2.5">
-            <div
-                class="flex h-9 w-9 items-center justify-center rounded-2xl bg-zen-700 text-lg font-black text-white shadow-sm">
-                EP</div>
-            <span class="text-lg font-black tracking-tight text-calm-800">EduPlan Perú</span>
+    <div class="max-w-4xl w-full bg-white border border-calm-200 rounded-3xl shadow-xl p-6 sm:p-10">
+        
+        <div class="flex items-center justify-between mb-8 pb-4 border-b border-calm-200 text-xs font-bold" id="progress-bar">
+            <div id="badge-1" class="flex items-center gap-2 text-zen-700">
+                <span class="h-6 w-6 rounded-full bg-zen-700 text-white flex items-center justify-center text-[11px]">1</span>
+                <span>Perfil de Trabajo</span>
+            </div>
+            <div class="h-0.5 flex-1 mx-4 bg-calm-200"></div>
+            <div id="badge-2" class="flex items-center gap-2 text-slate-400">
+                <span class="h-6 w-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[11px]">2</span>
+                <span>Instituciones y Carga Académica</span>
+            </div>
         </div>
-        <div class="text-xs font-bold text-slate-500">Paso <span id="indicador-paso">1</span> de 3</div>
-    </header>
 
-    <main class="flex-1 flex items-center justify-center px-4 py-6">
-        <div
-            class="w-full max-w-2xl bg-white rounded-3xl border border-calm-200 shadow-xl shadow-slate-200/50 p-8 sm:p-10 transition-all">
+        <form action="/completar-onboarding" method="POST" enctype="multipart/form-data" id="onboarding-form">
+            
+            <div id="paso-1" class="space-y-6">
+                <div>
+                    <h2 class="text-xl font-black text-slate-800">¡Bienvenido a tu espacio docente!</h2>
+                    <p class="text-sm text-slate-500 mt-1">Para personalizar tus documentos, cuéntanos cómo está estructurada tu carga laboral.</p>
+                </div>
 
-            <div class="w-full bg-calm-100 h-2 rounded-full mb-8 overflow-hidden">
-                <div id="barra-progreso" class="bg-zen-700 h-full w-1/3 transition-all duration-300"></div>
+                <div class="bg-calm-50 p-5 rounded-2xl border border-calm-200">
+                    <label class="block text-sm font-bold text-slate-700 mb-3">¿En cuántas instituciones educativas trabajas este año?</label>
+                    <select id="num-colegios" name="num_colegios" class="w-full sm:w-1/2 text-sm rounded-xl border border-calm-200 p-3 bg-white outline-none focus:border-zen-700 transition">
+                        <option value="1">1 Institución</option>
+                        <option value="2">2 Instituciones</option>
+                        <option value="3">3 Instituciones</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-3 p-4 border border-calm-200 rounded-2xl cursor-pointer hover:bg-calm-50 transition" onclick="document.getElementById('check-independiente').click()">
+                    <input type="checkbox" id="check-independiente" name="es_independiente" class="w-5 h-5 text-zen-600 rounded cursor-pointer">
+                    <div>
+                        <span class="block text-sm font-bold text-slate-700">Habilitar "Espacio Libre / Tutorías"</span>
+                        <span class="block text-xs text-slate-500">Ideal si das clases particulares o necesitas generar documentos sin formato de colegio.</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-4">
+                    <button type="button" onclick="generarColegiosYAvanzar()" class="px-6 py-3 rounded-2xl bg-zen-700 text-white font-bold text-sm hover:bg-zen-800 transition shadow-md shadow-zen-700/20">
+                        Siguiente Paso →
+                    </button>
+                </div>
             </div>
 
-            <form id="form-onboarding" action="/completar-onboarding" method="POST">
-
-                <!-- PASO 1: ROLES -->
-                <div id="paso-1" class="space-y-6">
-                    <div>
-                        <h2 class="text-2xl font-extrabold text-calm-800">¿Qué funciones desempeñas en la I.E.?</h2>
-                        <p class="text-slate-500 text-xs sm:text-sm mt-1">Puedes marcar más de una opción si tienes
-                            carga compartida.</p>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <label
-                            class="cursor-pointer border-2 border-calm-200 rounded-2xl p-5 hover:border-zen-700 transition flex flex-col items-center text-center group has-[:checked]:border-zen-700 has-[:checked]:bg-zen-50">
-                            <input type="checkbox" name="roles" value="Docente" class="hidden" checked>
-                            <span class="text-3xl mb-3">📚</span>
-                            <span class="font-extrabold text-sm text-calm-800">Docente de Aula</span>
-                            <span class="text-[11px] text-slate-500 mt-1 leading-tight">Sesiones, unidades y
-                                rúbricas</span>
-                        </label>
-                        <label
-                            class="cursor-pointer border-2 border-calm-200 rounded-2xl p-5 hover:border-zen-700 transition flex flex-col items-center text-center group has-[:checked]:border-zen-700 has-[:checked]:bg-zen-50">
-                            <input type="checkbox" name="roles" value="Directivo" class="hidden">
-                            <span class="text-3xl mb-3">🏢</span>
-                            <span class="font-extrabold text-sm text-calm-800">Directivo / Jerárquico</span>
-                            <span class="text-[11px] text-slate-500 mt-1 leading-tight">Monitoreo, oficios y RD</span>
-                        </label>
-                        <label
-                            class="cursor-pointer border-2 border-calm-200 rounded-2xl p-5 hover:border-zen-700 transition flex flex-col items-center text-center group has-[:checked]:border-zen-700 has-[:checked]:bg-zen-50">
-                            <input type="checkbox" name="roles" value="Auxiliar" class="hidden">
-                            <span class="text-3xl mb-3">📋</span>
-                            <span class="font-extrabold text-sm text-calm-800">Auxiliar de Educación</span>
-                            <span class="text-[11px] text-slate-500 mt-1 leading-tight">Fichas de seguimiento</span>
-                        </label>
-                    </div>
-                    <div class="pt-4 flex justify-end">
-                        <button type="button" onclick="irAlPaso(2)"
-                            class="rounded-2xl bg-zen-700 px-7 py-3 text-xs sm:text-sm font-extrabold text-white shadow hover:bg-zen-800 transition">Continuar
-                            a datos del colegio →</button>
-                    </div>
+            <div id="paso-2" class="space-y-6 hidden">
+                <div>
+                    <h2 class="text-xl font-black text-slate-800">Configura tus Instituciones y Aulas</h2>
+                    <p class="text-sm text-slate-500 mt-1">Despliega los grados para seleccionar las secciones específicas que tienes a cargo.</p>
                 </div>
 
-                <!-- PASO 2: DATOS I.E. -->
-                <div id="paso-2" class="space-y-5 hidden">
-                    <div>
-                        <h2 class="text-2xl font-extrabold text-calm-800">Información de tu Institución</h2>
-                        <p class="text-slate-500 text-xs sm:text-sm mt-1">Estos datos armarán el membrete de tus
-                            documentos oficiales.</p>
-                    </div>
-                    <div class="space-y-4 text-xs">
-                        <div>
-                            <label class="block font-bold text-slate-700 mb-1">Nombre o Número de la I.E.</label>
-                            <input type="text" name="nombre_ie" placeholder="Ej. I.E. San Miguel / N° 14001" required
-                                value="{{ perfil.nombre_ie if perfil else '' }}"
-                                class="w-full rounded-xl border border-calm-200 p-3 text-slate-900 focus:border-zen-700 focus:outline-none">
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block font-bold text-slate-700 mb-1">UGEL / DRE</label>
-                                <input type="text" name="ugel" placeholder="Ej. UGEL Piura" required
-                                    value="{{ perfil.ugel if perfil else '' }}"
-                                    class="w-full rounded-xl border border-calm-200 p-3 text-slate-900 focus:border-zen-700 focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block font-bold text-slate-700 mb-1">Lema Institucional (Opcional)</label>
-                                <input type="text" name="lema" placeholder="Ej. Disciplina y Superación"
-                                    value="{{ perfil.lema if perfil else '' }}"
-                                    class="w-full rounded-xl border border-calm-200 p-3 text-slate-900 focus:border-zen-700 focus:outline-none">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block font-bold text-slate-700 mb-1">Tu Nombre y Apellidos (Para
-                                firma)</label>
-                            <input type="text" name="nombre_docente" placeholder="Ej. Prof. María Rodríguez Ramos"
-                                required value="{{ perfil.nombre_docente if perfil else '' }}"
-                                class="w-full rounded-xl border border-calm-200 p-3 text-slate-900 focus:border-zen-700 focus:outline-none">
-                        </div>
-                    </div>
-                    <div class="pt-4 flex items-center justify-between">
-                        <button type="button" onclick="irAlPaso(1)"
-                            class="rounded-2xl border border-calm-200 px-6 py-3 text-xs font-bold text-slate-600 hover:bg-calm-50 transition">←
-                            Volver</button>
-                        <button type="button" onclick="irAlPaso(3)"
-                            class="rounded-2xl bg-zen-700 px-7 py-3 text-xs sm:text-sm font-extrabold text-white shadow hover:bg-zen-800 transition">Siguiente
-                            Paso →</button>
-                    </div>
+                <div id="contenedor-colegios" class="space-y-8"></div>
+
+                <div class="flex justify-between pt-4 border-t border-calm-200">
+                    <button type="button" onclick="volverPaso1()" class="px-6 py-3 rounded-2xl border border-calm-200 text-slate-600 font-bold text-sm hover:bg-calm-100 transition">
+                        ← Atrás
+                    </button>
+                    <button type="submit" class="px-6 py-3 rounded-2xl bg-zen-700 text-white font-bold text-sm hover:bg-zen-800 transition shadow-md shadow-zen-700/20">
+                        Finalizar e Ingresar →
+                    </button>
                 </div>
+            </div>
 
-                <!-- PASO 3: NIVELES Y CONTEXTO -->
-                <div id="paso-3" class="space-y-6 hidden">
-                    <div>
-                        <h2 class="text-2xl font-extrabold text-calm-800">Contexto Pedagógico</h2>
-                        <p class="text-slate-500 text-xs sm:text-sm mt-1">Adapta la plataforma al nivel y grados que
-                            manejas.</p>
-                    </div>
-
-                    <!-- NIVELES (Para todos los roles) -->
-                    <div class="space-y-2 text-xs">
-                        <label class="block font-bold text-slate-700 mb-2">1. ¿En qué niveles educativos laboras?
-                            (Puedes marcar varios)</label>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            <label class="checkbox-btn cursor-pointer">
-                                <input type="checkbox" name="nivel_educativo" value="Inicial" class="hidden">
-                                <div
-                                    class="border border-calm-200 rounded-xl py-2.5 text-center font-bold text-slate-600 transition">
-                                    Inicial</div>
-                            </label>
-                            <label class="checkbox-btn cursor-pointer">
-                                <input type="checkbox" name="nivel_educativo" value="Primaria" class="hidden">
-                                <div
-                                    class="border border-calm-200 rounded-xl py-2.5 text-center font-bold text-slate-600 transition">
-                                    Primaria</div>
-                            </label>
-                            <label class="checkbox-btn cursor-pointer">
-                                <input type="checkbox" name="nivel_educativo" value="Secundaria" class="hidden">
-                                <div
-                                    class="border border-calm-200 rounded-xl py-2.5 text-center font-bold text-slate-600 transition">
-                                    Secundaria</div>
-                            </label>
-                            <label class="checkbox-btn cursor-pointer">
-                                <input type="checkbox" name="nivel_educativo" value="EBA" class="hidden">
-                                <div
-                                    class="border border-calm-200 rounded-xl py-2.5 text-center font-bold text-slate-600 transition">
-                                    EBA</div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- ÁREAS CURRICULARES (Solo visible si es Docente) -->
-                    <div id="bloque-areas-docente" class="space-y-2 text-xs hidden border-t border-calm-100 pt-4">
-                        <label class="block font-bold text-slate-700 mb-2">2. Áreas Curriculares (Solo Docentes)</label>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
-                            <label class="checkbox-btn cursor-pointer"><input type="checkbox" name="area_curricular"
-                                    value="Comunicación" class="hidden doc-input">
-                                <div
-                                    class="border border-calm-200 rounded-xl px-2 py-2 text-center font-bold text-slate-600 transition">
-                                    Comunicación</div>
-                            </label>
-                            <label class="checkbox-btn cursor-pointer"><input type="checkbox" name="area_curricular"
-                                    value="Matemática" class="hidden doc-input">
-                                <div
-                                    class="border border-calm-200 rounded-xl px-2 py-2 text-center font-bold text-slate-600 transition">
-                                    Matemática</div>
-                            </label>
-                            <label class="checkbox-btn cursor-pointer"><input type="checkbox" name="area_curricular"
-                                    value="Ciencia y Tecnología" class="hidden doc-input">
-                                <div
-                                    class="border border-calm-200 rounded-xl px-2 py-2 text-center font-bold text-slate-600 transition">
-                                    C. y Tecnología</div>
-                            </label>
-                            <label class="checkbox-btn cursor-pointer"><input type="checkbox" name="area_curricular"
-                                    value="Ciencias Sociales" class="hidden doc-input">
-                                <div
-                                    class="border border-calm-200 rounded-xl px-2 py-2 text-center font-bold text-slate-600 transition">
-                                    C. Sociales</div>
-                            </label>
-                            <label class="checkbox-btn cursor-pointer"><input type="checkbox" name="area_curricular"
-                                    value="DPCC" class="hidden doc-input">
-                                <div
-                                    class="border border-calm-200 rounded-xl px-2 py-2 text-center font-bold text-slate-600 transition">
-                                    DPCC</div>
-                            </label>
-                            <label class="checkbox-btn cursor-pointer"><input type="checkbox" name="area_curricular"
-                                    value="Inglés" class="hidden doc-input">
-                                <div
-                                    class="border border-calm-200 rounded-xl px-2 py-2 text-center font-bold text-slate-600 transition">
-                                    Inglés</div>
-                            </label>
-                            <label class="checkbox-btn cursor-pointer"><input type="checkbox" name="area_curricular"
-                                    value="EPT" class="hidden doc-input">
-                                <div
-                                    class="border border-calm-200 rounded-xl px-2 py-2 text-center font-bold text-slate-600 transition">
-                                    EPT</div>
-                            </label>
-                            <label class="checkbox-btn cursor-pointer"><input type="checkbox" name="area_curricular"
-                                    value="Ed. Física" class="hidden doc-input">
-                                <div
-                                    class="border border-calm-200 rounded-xl px-2 py-2 text-center font-bold text-slate-600 transition">
-                                    Ed. Física</div>
-                            </label>
-                            <label class="checkbox-btn cursor-pointer"><input type="checkbox" name="area_curricular"
-                                    value="Primaria Integral" class="hidden doc-input">
-                                <div
-                                    class="border border-calm-200 rounded-xl px-2 py-2 text-center font-bold text-slate-600 transition">
-                                    Primaria Integral</div>
-                            </label>
-                        </div>
-                        <input type="text" name="area_curricular"
-                            placeholder="Otras áreas / Talleres (Ej. Computación, Arte...)"
-                            class="w-full rounded-xl border border-calm-200 p-3 text-slate-900 focus:border-zen-700 focus:outline-none doc-input">
-                    </div>
-
-                    <!-- GRADOS ESPECÍFICOS Y ENFOQUE (Para todos) -->
-                    <div class="space-y-4 text-xs border-t border-calm-100 pt-4">
-                        <div>
-                            <label class="block font-bold text-slate-700 mb-1">3. Grados o Secciones a cargo</label>
-                            <input type="text" name="grado_seccion"
-                                placeholder="Ej. 1° a 5° / 2do Grado A y B / Todo el colegio"
-                                class="w-full rounded-xl border border-calm-200 p-3 text-slate-900 focus:border-zen-700 focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block font-bold text-slate-700 mb-1">Enfoque del Colegio / PEI
-                                (Opcional)</label>
-                            <textarea name="enfoque_institucional" rows="2"
-                                placeholder="Ej. Énfasis en proyectos ambientales o método Montessori."
-                                class="w-full rounded-xl border border-calm-200 p-3 text-slate-900 focus:border-zen-700 focus:outline-none resize-none"></textarea>
-                        </div>
-                    </div>
-
-                    <div class="pt-4 flex items-center justify-between">
-                        <button type="button" onclick="irAlPaso(2)"
-                            class="rounded-2xl border border-calm-200 px-6 py-3 text-xs font-bold text-slate-600 hover:bg-calm-50 transition">←
-                            Volver</button>
-                        <button type="submit"
-                            class="rounded-2xl bg-zen-700 px-8 py-3.5 text-xs sm:text-sm font-extrabold text-white shadow-lg shadow-zen-700/20 hover:bg-zen-800 transition">Finalizar
-                            ✨</button>
-                    </div>
-                </div>
-
-            </form>
-        </div>
-    </main>
-
-    <footer class="py-6 text-center text-xs text-slate-400 font-medium">
-        EduPlan Perú &bull; Configuración adaptada a la normativa MINEDU
-    </footer>
+        </form>
+    </div>
 
     <script>
-        function irAlPaso(paso) {
-            if (paso === 3) adaptarPaso3();
+        let contadorBloques = 0; 
+        const areasCNEB = [
+            "Matemática", "Comunicación", "Ciencia y Tecnología", "Personal Social / CC.SS.", 
+            "DPCC", "Educación Física", "Arte y Cultura", "Inglés", "Educación Religiosa", 
+            "Educación para el Trabajo (EPT)", "Tutoría", "Computación / Informática"
+        ];
+        const seccionesBase = ["A", "B", "C", "D", "E", "F", "G", "Única"];
+
+        function generarColegiosYAvanzar() {
+            const num = parseInt(document.getElementById('num-colegios').value);
+            const contenedor = document.getElementById('contenedor-colegios');
+            contenedor.innerHTML = ''; 
+            contadorBloques = 0;
+
+            for (let i = 1; i <= num; i++) {
+                contenedor.innerHTML += `
+                <div class="bg-calm-50 p-5 sm:p-6 rounded-2xl border border-calm-200 shadow-sm relative">
+                    <div class="absolute -top-3 left-6 bg-zen-700 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full">
+                        Institución ${i}
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Nombre de la I.E.</label>
+                            <input type="text" name="colegio_${i}_nombre" required placeholder="Ej: I.E. San Miguel" class="w-full text-sm rounded-xl border border-calm-200 p-2.5 outline-none focus:border-zen-700">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">UGEL</label>
+                            <input type="text" name="colegio_${i}_ugel" required placeholder="Ej: UGEL Piura" class="w-full text-sm rounded-xl border border-calm-200 p-2.5 outline-none focus:border-zen-700">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Logo del Colegio (Opcional)</label>
+                            <input type="file" name="colegio_${i}_logo" accept="image/png, image/jpeg" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-zen-100 file:text-zen-700 hover:file:bg-zen-200 transition">
+                        </div>
+                    </div>
+
+                    <div class="mt-6 border-t border-calm-200 pt-4">
+                        <label class="block text-sm font-bold text-slate-700 mb-3">Carga Académica</label>
+                        <div id="cargas_colegio_${i}" class="space-y-4"></div>
+                        <button type="button" onclick="agregarBloqueAsignacion(${i})" class="w-full mt-3 py-3 border-2 border-dashed border-calm-200 rounded-xl text-xs font-bold text-slate-500 hover:border-zen-400 hover:text-zen-700 hover:bg-zen-50 transition">
+                            + Añadir un Curso a esta Institución
+                        </button>
+                    </div>
+                </div>
+                `;
+                agregarBloqueAsignacion(i);
+            }
 
             document.getElementById('paso-1').classList.add('hidden');
-            document.getElementById('paso-2').classList.add('hidden');
-            document.getElementById('paso-3').classList.add('hidden');
-
-            document.getElementById(`paso-${paso}`).classList.remove('hidden');
-            document.getElementById('indicador-paso').innerText = paso;
-
-            const progreso = document.getElementById('barra-progreso');
-            progreso.className = paso === 1 ? "bg-zen-700 h-full w-1/3 transition-all duration-300" :
-                paso === 2 ? "bg-zen-700 h-full w-2/3 transition-all duration-300" :
-                    "bg-zen-700 h-full w-full transition-all duration-300";
+            document.getElementById('paso-2').classList.remove('hidden');
+            document.getElementById('badge-1').className = "flex items-center gap-2 text-slate-400";
+            document.getElementById('badge-1').children[0].className = "h-6 w-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[11px]";
+            document.getElementById('badge-2').className = "flex items-center gap-2 text-zen-700";
+            document.getElementById('badge-2').children[0].className = "h-6 w-6 rounded-full bg-zen-700 text-white flex items-center justify-center text-[11px]";
         }
 
-        function adaptarPaso3() {
-            const rolesSeleccionados = Array.from(document.querySelectorAll('input[name="roles"]:checked')).map(cb => cb.value);
-            const bloqueAreas = document.getElementById('bloque-areas-docente');
+        function agregarBloqueAsignacion(idColegio) {
+            contadorBloques++;
+            const bId = contadorBloques;
+            const contenedor = document.getElementById(`cargas_colegio_${idColegio}`);
+            
+            let optionsHTML = areasCNEB.map(area => `<option value="${area}">${area}</option>`).join('');
+            optionsHTML += `<option value="Otro">Otro (Especificar)</option>`;
 
-            if (rolesSeleccionados.includes('Docente')) {
-                bloqueAreas.classList.remove('hidden');
+            const div = document.createElement('div');
+            div.className = "bg-white p-4 rounded-xl border border-calm-200 shadow-sm relative";
+            div.innerHTML = `
+                <button type="button" onclick="this.parentElement.remove()" class="absolute top-3 right-3 text-slate-400 hover:text-red-500 transition" title="Quitar curso">✕</button>
+                <input type="hidden" name="colegio_${idColegio}_bloques[]" value="${bId}">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500 block mb-1">Nivel Educativo</label>
+                        <select name="col_${idColegio}_b${bId}_nivel" onchange="actualizarGrados(this, ${bId})" class="w-full text-xs rounded-lg border border-calm-200 p-2.5 outline-none bg-calm-50 focus:border-zen-600">
+                            <option value="Secundaria" selected>Secundaria</option>
+                            <option value="Primaria">Primaria</option>
+                            <option value="Inicial">Inicial</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500 block mb-1">Área / Curso</label>
+                        <div class="flex flex-col gap-2">
+                            <select name="col_${idColegio}_b${bId}_area" onchange="verificarOtro(this, ${idColegio}, ${bId})" class="w-full text-xs rounded-lg border border-calm-200 p-2.5 outline-none bg-calm-50 focus:border-zen-600">
+                                ${optionsHTML}
+                            </select>
+                            <input type="text" id="otro_${idColegio}_${bId}" name="col_${idColegio}_b${bId}_area_otro" placeholder="Escribe el nombre del curso..." class="hidden w-full text-xs rounded-lg border border-calm-200 p-2.5 outline-none focus:border-zen-600">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[11px] font-bold text-slate-500 block mb-2">Selecciona los grados que enseñas y sus secciones:</label>
+                    <div id="grados_b${bId}" class="flex flex-col gap-2">
+                        <!-- Generado por JS -->
+                    </div>
+                </div>
+            `;
+            contenedor.appendChild(div);
+            
+            const selectNivel = div.querySelector(`select[name="col_${idColegio}_b${bId}_nivel"]`);
+            actualizarGrados(selectNivel, bId);
+        }
+
+        function verificarOtro(selectElement, idColegio, bId) {
+            const inputOtro = document.getElementById(`otro_${idColegio}_${bId}`);
+            if (selectElement.value === "Otro") {
+                inputOtro.classList.remove("hidden");
+                inputOtro.required = true;
             } else {
-                bloqueAreas.classList.add('hidden');
+                inputOtro.classList.add("hidden");
+                inputOtro.required = false;
+                inputOtro.value = "";
             }
+        }
+
+        function actualizarGrados(selectElement, bId) {
+            const nivel = selectElement.value;
+            const contenedorGrados = document.getElementById(`grados_b${bId}`);
+            const colId = selectElement.name.split('_')[1]; 
+
+            let grados = [];
+            if (nivel === 'Inicial') grados = ["3 Años", "4 Años", "5 Años"];
+            else if (nivel === 'Primaria') grados = ["1°", "2°", "3°", "4°", "5°", "6°"];
+            else grados = ["1°", "2°", "3°", "4°", "5°"];
+
+            contenedorGrados.innerHTML = grados.map((g, index) => `
+                <div class="border border-calm-200 rounded-lg overflow-hidden bg-calm-50">
+                    <label class="flex items-center gap-2 p-2 bg-white cursor-pointer hover:bg-calm-50 transition border-b border-calm-100">
+                        <input type="checkbox" name="col_${colId}_b${bId}_grados[]" value="${g}" onchange="toggleSecciones(this, 'secc_${colId}_${bId}_${index}')" class="accent-zen-600 w-4 h-4"> 
+                        <span class="text-xs font-bold text-slate-700">${g}</span>
+                    </label>
+                    <div id="secc_${colId}_${bId}_${index}" class="hidden p-3 bg-calm-50">
+                        <span class="text-[10px] font-bold text-slate-500 block mb-2">Secciones para ${g}:</span>
+                        <div class="flex flex-wrap gap-2">
+                            ${seccionesBase.map(s => `
+                                <label class="flex items-center gap-1 px-2 py-1 bg-white border border-calm-200 rounded-md text-[11px] font-bold text-slate-600 cursor-pointer hover:border-zen-400 transition">
+                                    <input type="checkbox" name="col_${colId}_b${bId}_g_${g}_secciones[]" value="${s}" class="accent-zen-600"> ${s}
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleSecciones(checkbox, targetId) {
+            const divSecciones = document.getElementById(targetId);
+            if (checkbox.checked) {
+                divSecciones.classList.remove("hidden");
+            } else {
+                divSecciones.classList.add("hidden");
+                // Desmarcar las secciones si desmarcan el grado
+                const subChecks = divSecciones.querySelectorAll('input[type="checkbox"]');
+                subChecks.forEach(c => c.checked = false);
+            }
+        }
+
+        function volverPaso1() {
+            document.getElementById('paso-2').classList.add('hidden');
+            document.getElementById('paso-1').classList.remove('hidden');
+            document.getElementById('badge-2').className = "flex items-center gap-2 text-slate-400";
+            document.getElementById('badge-2').children[0].className = "h-6 w-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[11px]";
+            document.getElementById('badge-1').className = "flex items-center gap-2 text-zen-700";
+            document.getElementById('badge-1').children[0].className = "h-6 w-6 rounded-full bg-zen-700 text-white flex items-center justify-center text-[11px]";
         }
     </script>
 </body>
-
 </html>
