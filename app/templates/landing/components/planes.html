@@ -1,4 +1,4 @@
-<section id="planes" class="py-20 bg-white border-t border-calm-100">
+<section id="planes" class="py-20 bg-calm-50 border-t border-calm-200">
     <div class="max-w-6xl mx-auto px-6">
         <div class="text-center mb-14">
             <span class="inline-block rounded-full bg-zen-50 border border-zen-200 px-3.5 py-1 text-xs font-bold text-zen-700 uppercase tracking-wider mb-3">
@@ -11,159 +11,353 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
             
             <!-- PLAN 1: DOCENTE -->
-            <div class="flex flex-col justify-between rounded-3xl border border-calm-100 bg-calm-50 p-6 shadow-sm hover:shadow-md transition">
+            <div class="flex flex-col justify-between rounded-3xl border border-calm-200 bg-white p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                 <div>
-                    <div class="h-11 w-11 rounded-2xl bg-blue-100 text-blue-800 flex items-center justify-center text-xl mb-4">📚</div>
+                    <div class="h-11 w-11 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center text-xl mb-4">📚</div>
                     <h3 class="text-xl font-bold text-calm-800">Docente de Aula</h3>
-                    <p class="text-slate-500 text-xs mt-1 mb-4 h-8">Planificación curricular y evaluación formativa diaria.</p>
+                    <p class="text-slate-500 text-xs mt-1 mb-4 h-8 leading-relaxed">Planificación curricular y evaluación formativa diaria.</p>
                     <div class="mb-5">
                         <span class="text-3xl font-extrabold text-calm-800">S/ 25</span>
                         <span class="text-slate-400 text-xs font-medium">/mes</span>
                     </div>
 
-                    <ul class="space-y-2.5 text-xs font-medium text-slate-600 mb-4">
-                        <li class="flex items-center gap-2"><span>✅</span> Sesiones según CNEB y RVM 094-2020</li>
-                        <li class="flex items-center gap-2"><span>✅</span> Rúbricas analíticas con escala AD-A-B-C</li>
-                        <li class="flex items-center gap-2"><span>✅</span> Situaciones significativas de contexto</li>
-                        <li class="flex items-center gap-2"><span>✅</span> Descarga inmediata en Word (.docx) y PDF</li>
+                    <ul class="space-y-2.5 text-xs font-medium text-slate-600 mb-6">
+                        <li class="flex items-center gap-2"><span class="text-zen-700 font-bold">✓</span> Sesiones según CNEB y RVM 094</li>
+                        <li class="flex items-center gap-2"><span class="text-zen-700 font-bold">✓</span> Rúbricas formativas (AD, A, B, C)</li>
+                        <li class="flex items-center gap-2"><span class="text-zen-700 font-bold">✓</span> Situaciones significativas reales</li>
+                        <li class="flex items-center gap-2"><span class="text-zen-700 font-bold">✓</span> Descarga inmediata en Word y PDF</li>
                     </ul>
-
-                    <!-- Desplegable Detalle Docente -->
-                    <details class="group my-4 border-t border-calm-200 pt-3">
-                        <summary class="flex items-center justify-between text-xs font-bold text-zen-700 cursor-pointer list-none select-none">
-                            <span>Ver cobertura pedagógica</span>
-                            <span class="transition-transform group-open:rotate-180">▾</span>
-                        </summary>
-                        <div class="mt-3 space-y-2 text-[11px] text-slate-600 leading-relaxed bg-white p-3 rounded-xl border border-calm-100">
-                            <p><strong>• Secuencia Didáctica:</strong> Procesos pedagógicos (problematización, propósito, motivación, saberes previos) y didácticos del área.</p>
-                            <p><strong>• Matriz Curricular:</strong> Competencias, capacidades, desempeños precisados y evidencias de aprendizaje CNEB.</p>
-                            <p><strong>• Instrumentos:</strong> Listas de cotejo, escalas valorativas y rúbricas con descriptores observables.</p>
-                            <p><strong>• Adaptaciones Curriculares:</strong> Diversificación para estudiantes con NEE (Inclusiva).</p>
-                        </div>
-                    </details>
                 </div>
 
-                <a href="/app" class="block w-full text-center rounded-xl bg-white border border-calm-200 py-2.5 text-xs font-bold text-calm-800 hover:border-zen-600 hover:text-zen-700 transition">
-                    Elegir Docente
-                </a>
+                <div class="pt-4 border-t border-calm-100 flex flex-col gap-3">
+                    <button type="button" onclick="abrirModalPlan('modal-docente')" class="text-xs font-bold text-zen-700 hover:text-zen-800 flex items-center justify-center gap-1.5 py-1">
+                        <span>Ver cobertura pedagógica</span>
+                        <span class="text-[11px]">→</span>
+                    </button>
+                    <a href="/auth" class="block w-full text-center rounded-xl bg-calm-100 hover:bg-calm-200 border border-calm-200 py-2.5 text-xs font-bold text-calm-800 hover:text-zen-700 transition">
+                        Elegir este plan
+                    </a>
+                </div>
             </div>
 
             <!-- PLAN 2: DIRECTIVO -->
-            <div class="flex flex-col justify-between rounded-3xl border border-calm-100 bg-calm-50 p-6 shadow-sm hover:shadow-md transition">
+            <div class="flex flex-col justify-between rounded-3xl border border-calm-200 bg-white p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                 <div>
-                    <div class="h-11 w-11 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl mb-4">🏢</div>
+                    <div class="h-11 w-11 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-xl mb-4">🏢</div>
                     <h3 class="text-xl font-bold text-calm-800">Directivo / Jerárquico</h3>
-                    <p class="text-slate-500 text-xs mt-1 mb-4 h-8">Gestión escolar, supervisión pedagógica y normativa UGEL.</p>
+                    <p class="text-slate-500 text-xs mt-1 mb-4 h-8 leading-relaxed">Gestión escolar, supervisión pedagógica y UGEL.</p>
                     <div class="mb-5">
                         <span class="text-3xl font-extrabold text-calm-800">S/ 30</span>
                         <span class="text-slate-400 text-xs font-medium">/mes</span>
                     </div>
 
-                    <ul class="space-y-2.5 text-xs font-medium text-slate-600 mb-4">
-                        <li class="flex items-center gap-2"><span>✅</span> Fichas de Monitoreo y Acompañamiento</li>
-                        <li class="flex items-center gap-2"><span>✅</span> Resoluciones Directorales (RD) estandarizadas</li>
-                        <li class="flex items-center gap-2"><span>✅</span> Oficios técnicos, informes y actas</li>
-                        <li class="flex items-center gap-2"><span>✅</span> Asistencia en PEI, PAT, PCI y RI</li>
+                    <ul class="space-y-2.5 text-xs font-medium text-slate-600 mb-6">
+                        <li class="flex items-center gap-2"><span class="text-zen-700 font-bold">✓</span> Fichas de Monitoreo MINEDU</li>
+                        <li class="flex items-center gap-2"><span class="text-zen-700 font-bold">✓</span> Resoluciones Directorales (RD)</li>
+                        <li class="flex items-center gap-2"><span class="text-zen-700 font-bold">✓</span> Oficios formales, informes y actas</li>
+                        <li class="flex items-center gap-2"><span class="text-zen-700 font-bold">✓</span> Asistencia en PEI, PAT, PCI y RI</li>
                     </ul>
-
-                    <!-- Desplegable Detalle Directivo -->
-                    <details class="group my-4 border-t border-calm-200 pt-3">
-                        <summary class="flex items-center justify-between text-xs font-bold text-zen-700 cursor-pointer list-none select-none">
-                            <span>Ver cobertura de gestión</span>
-                            <summary-icon class="transition-transform group-open:rotate-180">▾</summary-icon>
-                        </summary>
-                        <div class="mt-3 space-y-2 text-[11px] text-slate-600 leading-relaxed bg-white p-3 rounded-xl border border-calm-100">
-                            <p><strong>• Monitoreo Docente:</strong> Rúbricas de observación de aula MINEDU (Involucramiento, Razonamiento, Clima positivo, Evaluación formativa).</p>
-                            <p><strong>• Resoluciones (RD):</strong> Conformación de Comités de Gestión Escolar (Condiciones Operativas, Pedagógicas y Bienestar).</p>
-                            <p><strong>• Gestión del Riesgo:</strong> Planes de Contingencia y simulacros nacionales escolares.</p>
-                            <p><strong>• Informes Técnicos:</strong> Descargos, oficios a UGEL/DRE y actas de reuniones de coordinación docente.</p>
-                        </div>
-                    </details>
                 </div>
 
-                <a href="/app" class="block w-full text-center rounded-xl bg-white border border-calm-200 py-2.5 text-xs font-bold text-calm-800 hover:border-zen-600 hover:text-zen-700 transition">
-                    Elegir Directivo
-                </a>
+                <div class="pt-4 border-t border-calm-100 flex flex-col gap-3">
+                    <button type="button" onclick="abrirModalPlan('modal-directivo')" class="text-xs font-bold text-zen-700 hover:text-zen-800 flex items-center justify-center gap-1.5 py-1">
+                        <span>Ver cobertura de gestión</span>
+                        <span class="text-[11px]">→</span>
+                    </button>
+                    <a href="/auth" class="block w-full text-center rounded-xl bg-calm-100 hover:bg-calm-200 border border-calm-200 py-2.5 text-xs font-bold text-calm-800 hover:text-zen-700 transition">
+                        Elegir este plan
+                    </a>
+                </div>
             </div>
 
             <!-- PLAN 3: DOBLE ROL -->
-            <div class="flex flex-col justify-between rounded-3xl border-2 border-zen-700 bg-white p-6 shadow-lg relative transform lg:-translate-y-2">
-                <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-zen-700 text-white px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+            <div class="flex flex-col justify-between rounded-3xl border-2 border-zen-700 bg-white p-6 shadow-xl relative hover:-translate-y-1 transition-all duration-300">
+                <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-zen-700 text-white px-3.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow">
                     Recomendado
                 </div>
                 <div>
                     <div class="h-11 w-11 rounded-2xl bg-zen-100 text-zen-800 flex items-center justify-center text-xl mb-4">⭐</div>
                     <h3 class="text-xl font-bold text-calm-800">Doble Rol</h3>
-                    <p class="text-slate-500 text-xs mt-1 mb-4 h-8">Para docentes con horas de coordinación o directivos con aula.</p>
+                    <p class="text-slate-500 text-xs mt-1 mb-4 h-8 leading-relaxed">Coordinadores pedagógicos o directivos con aula.</p>
                     <div class="mb-5">
-                        <span class="text-3xl font-extrabold text-calm-800">S/ 35</span>
+                        <span class="text-3xl font-extrabold text-zen-800">S/ 35</span>
                         <span class="text-slate-400 text-xs font-medium">/mes</span>
                     </div>
 
-                    <ul class="space-y-2.5 text-xs font-medium text-slate-600 mb-4">
-                        <li class="flex items-center gap-2"><span>✅</span> Acceso total a herramientas Docentes</li>
-                        <li class="flex items-center gap-2"><span>✅</span> Acceso total a módulos Directivos</li>
-                        <li class="flex items-center gap-2"><span>✅</span> Alternancia de rol en 1 clic en cabecera</li>
-                        <li class="flex items-center gap-2"><span>✅</span> Historial dual segmentado por rol</li>
+                    <ul class="space-y-2.5 text-xs font-medium text-slate-600 mb-6">
+                        <li class="flex items-center gap-2"><span class="text-zen-700 font-bold">✓</span> Suite Docente + Directiva completa</li>
+                        <li class="flex items-center gap-2"><span class="text-zen-700 font-bold">✓</span> Alternancia de rol en 1 clic</li>
+                        <li class="flex items-center gap-2"><span class="text-zen-700 font-bold">✓</span> Carteles de alcance y secuencias</li>
+                        <li class="flex items-center gap-2"><span class="text-zen-700 font-bold">✓</span> Historial dual segmentado por rol</li>
                     </ul>
-
-                    <!-- Desplegable Detalle Doble Rol -->
-                    <details class="group my-4 border-t border-calm-200 pt-3">
-                        <summary class="flex items-center justify-between text-xs font-bold text-zen-700 cursor-pointer list-none select-none">
-                            <span>Ver alcance integral</span>
-                            <span class="transition-transform group-open:rotate-180">▾</span>
-                        </summary>
-                        <div class="mt-3 space-y-2 text-[11px] text-slate-600 leading-relaxed bg-stone-50 p-3 rounded-xl border border-calm-100">
-                            <p><strong>• Coordinación Pedagógica:</strong> Elaboración de carteles de alcances y secuencias, planes de refuerzo escolar y unidades de aprendizaje.</p>
-                            <p><strong>• Doble Contexto:</strong> Redacta documentos directivos sin perder tus planificaciones didácticas por grado y área.</p>
-                            <p><strong>• Exportación Mixta:</strong> Plantillas directivas oficiales y formatos de sesión en la misma cuenta.</p>
-                        </div>
-                    </details>
                 </div>
 
-                <a href="/app" class="block w-full text-center rounded-xl bg-zen-700 py-2.5 text-xs font-bold text-white hover:bg-zen-800 transition shadow">
-                    Comenzar con Doble Rol
-                </a>
+                <div class="pt-4 border-t border-zen-100 flex flex-col gap-3">
+                    <button type="button" onclick="abrirModalPlan('modal-doble')" class="text-xs font-bold text-zen-700 hover:text-zen-800 flex items-center justify-center gap-1.5 py-1">
+                        <span>Ver alcance integral</span>
+                        <span class="text-[11px]">→</span>
+                    </button>
+                    <a href="/auth" class="block w-full text-center rounded-xl bg-zen-700 hover:bg-zen-800 py-2.5 text-xs font-bold text-white transition shadow-md shadow-zen-700/20">
+                        Elegir este plan
+                    </a>
+                </div>
             </div>
 
             <!-- PLAN 4: INSTITUCIONAL -->
-            <div class="flex flex-col justify-between rounded-3xl border border-calm-100 bg-calm-50 p-6 shadow-sm hover:shadow-md transition">
+            <div class="flex flex-col justify-between rounded-3xl border border-calm-200 bg-white p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                 <div>
-                    <div class="h-11 w-11 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-xl mb-4">🤝</div>
+                    <div class="h-11 w-11 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center text-xl mb-4">🤝</div>
                     <h3 class="text-xl font-bold text-calm-800">Institucional</h3>
-                    <p class="text-slate-500 text-xs mt-1 mb-4 h-8">Colegios públicos por convenio o instituciones privadas completas.</p>
+                    <p class="text-slate-500 text-xs mt-1 mb-4 h-8 leading-relaxed">Colegios por convenio o privadas completas.</p>
                     <div class="mb-5">
                         <span class="text-2xl font-extrabold text-calm-800">A medida</span>
-                        <span class="text-slate-400 text-xs block font-medium">Por volumen de docentes</span>
+                        <span class="text-slate-400 text-xs block font-medium">Por plana docente</span>
                     </div>
 
-                    <ul class="space-y-2.5 text-xs font-medium text-slate-600 mb-4">
-                        <li class="flex items-center gap-2"><span>✅</span> Cuentas independientes para toda la plana</li>
-                        <li class="flex items-center gap-2"><span>✅</span> Panel de supervisión para Dirección y Subdirección</li>
-                        <li class="flex items-center gap-2"><span>✅</span> Membrete, logo y PEI unificado</li>
-                        <li class="flex items-center gap-2"><span>✅</span> Taller de capacitación docente incluido</li>
+                    <ul class="space-y-2.5 text-xs font-medium text-slate-600 mb-6">
+                        <li class="flex items-center gap-2"><span class="text-zen-700 font-bold">✓</span> Cuentas independientes para toda la I.E.</li>
+                        <li class="flex items-center gap-2"><span class="text-zen-700 font-bold">✓</span> Panel de supervisión y avance</li>
+                        <li class="flex items-center gap-2"><span class="text-zen-700 font-bold">✓</span> Membrete, escudo y PEI unificado</li>
+                        <li class="flex items-center gap-2"><span class="text-zen-700 font-bold">✓</span> Taller de capacitación oficial</li>
                     </ul>
-
-                    <!-- Desplegable Detalle Institucional -->
-                    <details class="group my-4 border-t border-calm-200 pt-3">
-                        <summary class="flex items-center justify-between text-xs font-bold text-zen-700 cursor-pointer list-none select-none">
-                            <span>Ver beneficios institucionales</span>
-                            <span class="transition-transform group-open:rotate-180">▾</span>
-                        </summary>
-                        <div class="mt-3 space-y-2 text-[11px] text-slate-600 leading-relaxed bg-white p-3 rounded-xl border border-calm-100">
-                            <p><strong>• Alineamiento PEI:</strong> La IA adopta la misión, visión, lema y sellos pedagógicos específicos de tu colegio.</p>
-                            <p><strong>• Estandarización:</strong> Toda la institución entrega programaciones con el mismo formato editorial ante inspecciones de UGEL.</p>
-                            <p><strong>• Auditoría Directiva:</strong> Monitorea qué docentes están generando sus unidades e instrumentos en tiempo real.</p>
-                            <p><strong>• Soporte Técnico:</strong> Canal de atención preferencial vía WhatsApp.</p>
-                        </div>
-                    </details>
                 </div>
 
-                <a href="https://wa.me/51922498580?text=Hola,%20solicito%20cotización%20del%20Plan%20Institucional%20para%20mi%20colegio" target="_blank" class="block w-full text-center rounded-xl bg-white border border-calm-200 py-2.5 text-xs font-bold text-calm-800 hover:border-zen-600 hover:text-zen-700 transition">
-                    Coordinar por WhatsApp
-                </a>
+                <div class="pt-4 border-t border-calm-100 flex flex-col gap-3">
+                    <button type="button" onclick="abrirModalPlan('modal-institucional')" class="text-xs font-bold text-zen-700 hover:text-zen-800 flex items-center justify-center gap-1.5 py-1">
+                        <span>Ver beneficios institucionales</span>
+                        <span class="text-[11px]">→</span>
+                    </button>
+                    <a href="https://wa.me/51922498580?text=Hola,%20solicito%20cotización%20del%20Plan%20Institucional%20para%20mi%20colegio" target="_blank" class="block w-full text-center rounded-xl bg-calm-100 hover:bg-calm-200 border border-calm-200 py-2.5 text-xs font-bold text-calm-800 hover:text-zen-700 transition">
+                        Coordinar por WhatsApp
+                    </a>
+                </div>
             </div>
 
         </div>
     </div>
 </section>
+
+<!-- ========================================== -->
+<!-- MODALES DETALLADOS CON INFORMACIÓN AMPLIA -->
+<!-- ========================================== -->
+
+<!-- Modal 1: Docente de Aula -->
+<div id="modal-docente" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white border border-calm-200 w-full max-w-2xl rounded-3xl shadow-2xl p-6 sm:p-8 overflow-y-auto max-h-[90vh]">
+        <div class="flex items-center justify-between pb-4 border-b border-calm-100 mb-6">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl p-2 bg-blue-50 text-blue-700 rounded-2xl">📚</span>
+                <div>
+                    <h3 class="text-xl font-black text-calm-800">Plan Docente de Aula</h3>
+                    <p class="text-xs text-slate-500">Diseñado para simplificar el 100% de la carga pedagógica de clase</p>
+                </div>
+            </div>
+            <button onclick="cerrarModalPlan('modal-docente')" class="text-slate-400 hover:text-slate-600 text-lg p-2">✕</button>
+        </div>
+
+        <div class="space-y-4 text-xs text-slate-600 leading-relaxed">
+            <div class="p-4 bg-calm-50 rounded-2xl border border-calm-200">
+                <h4 class="font-extrabold text-slate-800 text-sm mb-1.5 flex items-center gap-2">
+                    <span>🎯</span> Secuencias Didácticas Completas (90 y 135 min)
+                </h4>
+                <p>Genera sesiones articuladas con los procesos pedagógicos obligatorios (problematización, propósito, motivación, saberes previos, gestión y acompañamiento, y evaluación) junto a los procesos didácticos propios de cada especialidad.</p>
+            </div>
+
+            <div class="p-4 bg-calm-50 rounded-2xl border border-calm-200">
+                <h4 class="font-extrabold text-slate-800 text-sm mb-1.5 flex items-center gap-2">
+                    <span>📊</span> Matriz de Evaluación Formativa y RVM N° 094-2020
+                </h4>
+                <p>Formulación coherente y no mecánica de competencias, capacidades, estándares de aprendizaje y desempeños precisados. Incluye criterios de evaluación redactados con el mismo verbo rector y descriptores en escala cualitativa (AD, A, B y C).</p>
+            </div>
+
+            <div class="p-4 bg-calm-50 rounded-2xl border border-calm-200">
+                <h4 class="font-extrabold text-slate-800 text-sm mb-1.5 flex items-center gap-2">
+                    <span>♿</span> Adaptaciones Curriculares y DUA
+                </h4>
+                <p>Articulación explícita con el Diseño Universal para el Aprendizaje: múltiples formas de motivación, representación de la información y expresión para aulas diversas y atención a Necesidades Educativas Especiales (NEE).</p>
+            </div>
+
+            <div class="p-4 bg-calm-50 rounded-2xl border border-calm-200">
+                <h4 class="font-extrabold text-slate-800 text-sm mb-1.5 flex items-center gap-2">
+                    <span>📄</span> Exportación Directa a Word (.docx)
+                </h4>
+                <p>Olvídate del copiar y pegar desordenado. Descarga tus sesiones listas con tablas cuadradas oficiales, membrete institucional configurado y márgenes listos para archivar en tu carpeta pedagógica.</p>
+            </div>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-calm-100 flex justify-end gap-3">
+            <button onclick="cerrarModalPlan('modal-docente')" class="px-5 py-2.5 rounded-xl border border-calm-200 text-xs font-bold text-slate-600 hover:bg-calm-100">Cerrar</button>
+            <a href="/auth" class="px-6 py-2.5 rounded-xl bg-zen-700 text-xs font-bold text-white hover:bg-zen-800 shadow">Elegir este plan</a>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Directivo / Jerárquico -->
+<div id="modal-directivo" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white border border-calm-200 w-full max-w-2xl rounded-3xl shadow-2xl p-6 sm:p-8 overflow-y-auto max-h-[90vh]">
+        <div class="flex items-center justify-between pb-4 border-b border-calm-100 mb-6">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl p-2 bg-emerald-50 text-emerald-700 rounded-2xl">🏢</span>
+                <div>
+                    <h3 class="text-xl font-black text-calm-800">Plan Directivo y Jerárquico</h3>
+                    <p class="text-xs text-slate-500">Liderazgo pedagógico, normativo y supervisión escolar</p>
+                </div>
+            </div>
+            <button onclick="cerrarModalPlan('modal-directivo')" class="text-slate-400 hover:text-slate-600 text-lg p-2">✕</button>
+        </div>
+
+        <div class="space-y-4 text-xs text-slate-600 leading-relaxed">
+            <div class="p-4 bg-calm-50 rounded-2xl border border-calm-200">
+                <h4 class="font-extrabold text-slate-800 text-sm mb-1.5 flex items-center gap-2">
+                    <span>📋</span> Fichas de Monitoreo con Rúbricas MINEDU
+                </h4>
+                <p>Instrumentos estandarizados basados en las 5 rúbricas de desempeño docente (Involucramiento activo, Razonamiento y creatividad, Evaluación formativa y retroalimentación, Clima de respeto y Regulación de conducta).</p>
+            </div>
+
+            <div class="p-4 bg-calm-50 rounded-2xl border border-calm-200">
+                <h4 class="font-extrabold text-slate-800 text-sm mb-1.5 flex items-center gap-2">
+                    <span>⚖️</span> Resoluciones Directorales (RD) Normativas
+                </h4>
+                <p>Redacción jurídica y administrativa precisa para conformación de Comités de Gestión Escolar 2026 (Condiciones Operativas, Pedagógicas y Bienestar), comisiones de inventario, plan de lector institucional y planes de contingencia.</p>
+            </div>
+
+            <div class="p-4 bg-calm-50 rounded-2xl border border-calm-200">
+                <h4 class="font-extrabold text-slate-800 text-sm mb-1.5 flex items-center gap-2">
+                    <span>📁</span> Instrumentos de Gestión Escolar (PEI, PAT, PCI, RI)
+                </h4>
+                <p>Estructuración y revisión de diagnósticos situacionales, metas de aprendizaje y formulación de actividades de gestión para cumplimiento de compromisos directivos ante la UGEL.</p>
+            </div>
+
+            <div class="p-4 bg-calm-50 rounded-2xl border border-calm-200">
+                <h4 class="font-extrabold text-slate-800 text-sm mb-1.5 flex items-center gap-2">
+                    <span>✉️</span> Oficios Formales, Descargos e Informes Técnicos
+                </h4>
+                <p>Respuestas técnicas para especialistas de UGEL y DRE con terminología formal del aparato estatal educativo peruano.</p>
+            </div>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-calm-100 flex justify-end gap-3">
+            <button onclick="cerrarModalPlan('modal-directivo')" class="px-5 py-2.5 rounded-xl border border-calm-200 text-xs font-bold text-slate-600 hover:bg-calm-100">Cerrar</button>
+            <a href="/auth" class="px-6 py-2.5 rounded-xl bg-zen-700 text-xs font-bold text-white hover:bg-zen-800 shadow">Elegir este plan</a>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 3: Doble Rol -->
+<div id="modal-doble" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white border border-calm-200 w-full max-w-2xl rounded-3xl shadow-2xl p-6 sm:p-8 overflow-y-auto max-h-[90vh]">
+        <div class="flex items-center justify-between pb-4 border-b border-calm-100 mb-6">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl p-2 bg-zen-50 text-zen-800 rounded-2xl">⭐</span>
+                <div>
+                    <h3 class="text-xl font-black text-calm-800">Plan Doble Rol (Docente + Directivo)</h3>
+                    <p class="text-xs text-slate-500">La solución híbrida para coordinadores pedagógicos y directores con horas de aula</p>
+                </div>
+            </div>
+            <button onclick="cerrarModalPlan('modal-doble')" class="text-slate-400 hover:text-slate-600 text-lg p-2">✕</button>
+        </div>
+
+        <div class="space-y-4 text-xs text-slate-600 leading-relaxed">
+            <div class="p-4 bg-zen-50/50 rounded-2xl border border-zen-100">
+                <h4 class="font-extrabold text-zen-800 text-sm mb-1.5 flex items-center gap-2">
+                    <span>🔄</span> Conmutador de Rol en 1 Clic
+                </h4>
+                <p>Cambia instantáneamente en tu barra de trabajo entre planificar tus clases de aula o generar oficios y monitoreos de coordinación sin tener que salir ni abrir cuentas separadas.</p>
+            </div>
+
+            <div class="p-4 bg-calm-50 rounded-2xl border border-calm-200">
+                <h4 class="font-extrabold text-slate-800 text-sm mb-1.5 flex items-center gap-2">
+                    <span>📈</span> Carteles de Alcance y Secuencia Curricular
+                </h4>
+                <p>Diseña la progresión de competencias por ciclo escolar para coordinar con los profesores de tu área y asegurar la coherencia en las evaluaciones diagnósticas y planes de refuerzo escolar.</p>
+            </div>
+
+            <div class="p-4 bg-calm-50 rounded-2xl border border-calm-200">
+                <h4 class="font-extrabold text-slate-800 text-sm mb-1.5 flex items-center gap-2">
+                    <span>🗂️</span> Historial Dual Inteligente
+                </h4>
+                <p>Tu biblioteca de documentos mantiene organizadas tus sesiones de clase por grado y sección separadas de los informes de gestión y actas de coordinación.</p>
+            </div>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-calm-100 flex justify-end gap-3">
+            <button onclick="cerrarModalPlan('modal-doble')" class="px-5 py-2.5 rounded-xl border border-calm-200 text-xs font-bold text-slate-600 hover:bg-calm-100">Cerrar</button>
+            <a href="/auth" class="px-6 py-2.5 rounded-xl bg-zen-700 text-xs font-bold text-white hover:bg-zen-800 shadow">Elegir este plan</a>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 4: Institucional -->
+<div id="modal-institucional" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white border border-calm-200 w-full max-w-2xl rounded-3xl shadow-2xl p-6 sm:p-8 overflow-y-auto max-h-[90vh]">
+        <div class="flex items-center justify-between pb-4 border-b border-calm-100 mb-6">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl p-2 bg-amber-50 text-amber-800 rounded-2xl">🤝</span>
+                <div>
+                    <h3 class="text-xl font-black text-calm-800">Plan Institucional para Colegios</h3>
+                    <p class="text-xs text-slate-500">Estandarización pedagógica e identidad institucional para toda la plana docente</p>
+                </div>
+            </div>
+            <button onclick="cerrarModalPlan('modal-institucional')" class="text-slate-400 hover:text-slate-600 text-lg p-2">✕</button>
+        </div>
+
+        <div class="space-y-4 text-xs text-slate-600 leading-relaxed">
+            <div class="p-4 bg-calm-50 rounded-2xl border border-calm-200">
+                <h4 class="font-extrabold text-slate-800 text-sm mb-1.5 flex items-center gap-2">
+                    <span>🏛️</span> Personalización con el Sello de tu Institución Educativa
+                </h4>
+                <p>Entrenamos el contexto institucional con tu PEI (Misión, Visión, Valores institucionales, Lema y Enfoques transversales priorizados). Toda la plana docente generará documentos alineados a la misma identidad.</p>
+            </div>
+
+            <div class="p-4 bg-calm-50 rounded-2xl border border-calm-200">
+                <h4 class="font-extrabold text-slate-800 text-sm mb-1.5 flex items-center gap-2">
+                    <span>📊</span> Panel de Supervisión y Auditoría Directiva
+                </h4>
+                <p>La dirección escolar puede monitorear el avance de las programaciones curriculares por nivel, grado y área en tiempo real, garantizando la entrega oportuna para supervisiones de UGEL.</p>
+            </div>
+
+            <div class="p-4 bg-calm-50 rounded-2xl border border-calm-200">
+                <h4 class="font-extrabold text-slate-800 text-sm mb-1.5 flex items-center gap-2">
+                    <span>🎓</span> Taller de Inducción Docente y Acompañamiento
+                </h4>
+                <p>Sesión sincrónica de capacitación pedagógica para todo el cuerpo docente y directivo, garantizando un aprovechamiento óptimo desde el primer día de clase.</p>
+            </div>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-calm-100 flex justify-end gap-3">
+            <button onclick="cerrarModalPlan('modal-institucional')" class="px-5 py-2.5 rounded-xl border border-calm-200 text-xs font-bold text-slate-600 hover:bg-calm-100">Cerrar</button>
+            <a href="https://wa.me/51922498580?text=Hola,%20solicito%20cotización%20del%20Plan%20Institucional%20para%20mi%20colegio" target="_blank" class="px-6 py-2.5 rounded-xl bg-zen-700 text-xs font-bold text-white hover:bg-zen-800 shadow">Coordinar por WhatsApp</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function abrirModalPlan(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function cerrarModalPlan(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    // Cerrar al hacer clic fuera del contenido
+    window.addEventListener('click', function(e) {
+        const modales = ['modal-docente', 'modal-directivo', 'modal-doble', 'modal-institucional'];
+        modales.forEach(id => {
+            const m = document.getElementById(id);
+            if (m && e.target === m) {
+                cerrarModalPlan(id);
+            }
+        });
+    });
+</script>

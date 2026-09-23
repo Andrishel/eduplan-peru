@@ -6,97 +6,109 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Espacio de Trabajo | EduPlan Perú</title>
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-    <!-- HTMX para recargas parciales fluidas -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: { sans: ['Nunito', 'sans-serif'] },
                     colors: {
-                        calm: { 50: '#fafaf9', 100: '#f5f5f4', 200: '#e7e5e4', 800: '#292524' },
-                        zen: { 50: '#f0fdfa', 100: '#ccfbf1', 200: '#99f6e4', 600: '#0d9488', 700: '#0f766e', 800: '#115e59' }
+                        calm: { 
+                            50: '#fafaf9', 
+                            100: '#f5f5f4', 
+                            200: '#e7e5e4', 
+                            700: '#44403c',
+                            800: '#292524', 
+                            900: '#1c1917', 
+                            950: '#0c0a09' 
+                        },
+                        zen: { 
+                            50: '#f0fdfa', 
+                            100: '#ccfbf1', 
+                            200: '#99f6e4', 
+                            400: '#2dd4bf', 
+                            600: '#0d9488', 
+                            700: '#0f766e', 
+                            800: '#115e59', 
+                            900: '#134e4a' 
+                        }
                     }
                 }
             }
         }
     </script>
+    <script>
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
     <style>
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #e7e5e4;
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #d6d3d1;
-        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e7e5e4; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #44403c; }
+        ::-webkit-scrollbar-thumb:hover { background: #d6d3d1; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #57534e; }
     </style>
 </head>
 
-<body
-    class="flex h-screen bg-calm-50 font-sans text-calm-800 antialiased selection:bg-zen-600 selection:text-white overflow-hidden">
+<body class="flex h-screen bg-calm-50 dark:bg-calm-950 font-sans text-calm-800 dark:text-calm-100 antialiased selection:bg-zen-600 selection:text-white overflow-hidden transition-colors duration-200">
 
-    <!-- BARRA LATERAL (Historial y Perfil) -->
-    <aside class="w-72 bg-white border-r border-calm-200 flex flex-col h-full shadow-sm z-10 hidden md:flex">
+    <!-- BARRA LATERAL -->
+    <aside class="w-72 bg-white dark:bg-calm-900 border-r border-calm-200 dark:border-calm-700 flex flex-col h-full shadow-sm z-10 hidden md:flex transition-colors duration-200">
 
         <!-- Logo superior -->
-        <div class="h-16 flex items-center px-6 border-b border-calm-100 shrink-0">
+        <div class="h-16 flex items-center px-6 border-b border-calm-100 dark:border-calm-700/60 shrink-0">
             <div class="flex items-center gap-2.5">
-                <div
-                    class="flex h-8 w-8 items-center justify-center rounded-xl bg-zen-700 text-sm font-black text-white shadow-sm">
-                    EP</div>
-                <span class="text-base font-black tracking-tight text-calm-800">EduPlan Perú</span>
+                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-zen-700 text-sm font-black text-white shadow-sm">
+                    EP
+                </div>
+                <span class="text-base font-black tracking-tight text-calm-800 dark:text-white">EduPlan Perú</span>
             </div>
         </div>
 
         <!-- Botón Nuevo Documento -->
         <div class="p-4 shrink-0">
             <button onclick="window.location.reload()"
-                class="w-full flex items-center justify-center gap-2 rounded-xl bg-white border border-calm-200 py-2.5 text-sm font-bold text-slate-600 hover:border-zen-600 hover:text-zen-700 transition shadow-sm group">
-                <span class="text-lg group-hover:rotate-90 transition-transform duration-300">+</span> Nueva
-                planificación
+                class="w-full flex items-center justify-center gap-2 rounded-xl bg-white dark:bg-calm-800 border border-calm-200 dark:border-calm-700 py-2.5 text-sm font-bold text-slate-600 dark:text-calm-100 hover:border-zen-600 dark:hover:border-zen-400 hover:text-zen-700 dark:hover:text-zen-400 transition shadow-sm group">
+                <span class="text-lg group-hover:rotate-90 transition-transform duration-300">+</span> Nueva planificación
             </button>
         </div>
 
         <!-- Lista de Historial -->
         <div class="flex-1 overflow-y-auto px-4 pb-4">
-            <h3 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-3 px-2">Historial Reciente
+            <h3 class="text-[10px] font-extrabold text-slate-400 dark:text-stone-400 uppercase tracking-wider mb-3 px-2">
+                Historial Reciente
             </h3>
             <div id="lista-historial" class="space-y-1">
                 {% include "components/lista_historial.html" %}
             </div>
         </div>
 
-        <!-- Badge de Perfil (Bajo) -->
-        <div class="p-4 border-t border-calm-100 shrink-0 bg-calm-50/50">
+        <!-- Badge de Perfil -->
+        <div class="p-4 border-t border-calm-100 dark:border-calm-700/60 shrink-0 bg-calm-50/50 dark:bg-calm-900/60">
             <div class="flex items-center gap-3">
-                <div
-                    class="h-9 w-9 rounded-full bg-zen-100 flex items-center justify-center text-zen-700 font-bold border border-zen-200 shrink-0 overflow-hidden">
+                <div class="h-9 w-9 rounded-full bg-zen-100 dark:bg-zen-900/60 flex items-center justify-center text-zen-700 dark:text-zen-400 font-bold border border-zen-200 dark:border-zen-700 shrink-0 overflow-hidden">
                     {% if perfil and perfil.logo_url %}
-                    <img src="/static/uploads/{{ perfil.logo_url }}" alt="Logo" class="h-full w-full object-cover">
+                        <img src="/static/uploads/{{ perfil.logo_url }}" alt="Logo" class="h-full w-full object-cover">
                     {% else %}
-                    {{ perfil.nombre_docente[0:1] if perfil and perfil.nombre_docente else (usuario.nombre_completo[0:1]
-                    if usuario else 'U') }}
+                        {{ perfil.nombre_docente[0:1] if perfil and perfil.nombre_docente else (usuario.nombre_completo[0:1] if usuario else 'U') }}
                     {% endif %}
                 </div>
                 <div class="flex flex-col overflow-hidden">
-                    <span class="text-xs font-extrabold text-slate-700 truncate">{{ perfil.nombre_docente if perfil and
-                        perfil.nombre_docente else (usuario.nombre_completo if usuario else 'Docente') }}</span>
-                    <span class="text-[10px] text-slate-500 truncate">{{ perfil.nombre_ie if perfil else 'Sin
-                        Institución' }}</span>
+                    <span class="text-xs font-extrabold text-slate-700 dark:text-calm-100 truncate">
+                        {{ perfil.nombre_docente if perfil and perfil.nombre_docente else (usuario.nombre_completo if usuario else 'Docente') }}
+                    </span>
+                    <span class="text-[10px] text-slate-500 dark:text-stone-400 truncate">
+                        {{ perfil.nombre_ie if perfil else 'Sin Institución' }}
+                    </span>
                 </div>
                 <button hx-get="/modal-perfil" hx-target="body" hx-swap="beforeend"
-                    class="p-2 ml-auto text-slate-400 hover:text-zen-700 transition"
-                    title="Configurar instituciones y perfil">
+                    class="p-2 ml-auto text-slate-400 dark:text-stone-400 hover:text-zen-700 dark:hover:text-zen-400 transition" title="Configurar instituciones y apariencia">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
@@ -110,122 +122,119 @@
     </aside>
 
     <!-- ÁREA PRINCIPAL -->
-    <main class="flex-1 flex flex-col h-full relative">
-        <!-- Cabecera Superior: Contexto Institucional Dinámico y Filtros en Cascada -->
-        <header
-            class="bg-white border-b border-calm-200 h-16 flex items-center justify-between px-6 shrink-0 print:hidden z-10">
-            <div class="flex items-center gap-3 w-full max-w-5xl">
+    <main class="flex-1 flex flex-col h-full relative bg-calm-50 dark:bg-calm-950 transition-colors duration-200">
 
-                <!-- Selector Siempre Activo de Institución -->
-                <div class="flex items-center gap-1.5 bg-calm-50 border border-calm-200 rounded-xl px-2 py-1 shrink-0">
+        <!-- Cabecera Superior -->
+        <header class="bg-white dark:bg-calm-900 border-b border-calm-200 dark:border-calm-700 h-16 flex items-center justify-between px-6 shrink-0 print:hidden z-10 transition-colors duration-200">
+            <div class="flex items-center gap-3 w-full max-w-5xl">
+                
+                <!-- Selector Institución -->
+                <div class="flex items-center gap-1.5 bg-calm-50 dark:bg-calm-800 border border-calm-200 dark:border-calm-700 rounded-xl px-2.5 py-1.5 shrink-0">
                     <span class="text-xs">🏫</span>
-                    <select onchange="window.location.href='/app?institucion_id=' + this.value"
-                        class="bg-transparent text-slate-700 text-xs font-bold outline-none cursor-pointer">
+                    <select onchange="window.location.href='/app?institucion_id=' + this.value" 
+                            class="bg-transparent text-slate-700 dark:text-calm-100 text-xs font-bold outline-none cursor-pointer">
                         {% for inst in instituciones %}
-                        <option value="{{ inst.id }}" {% if perfil and inst.id==perfil.id %}selected{% endif %}>
-                            {{ inst.nombre_ie }}
-                        </option>
+                            <option value="{{ inst.id }}" class="bg-white dark:bg-calm-900 text-slate-700 dark:text-calm-100" {% if perfil and inst.id == perfil.id %}selected{% endif %}>
+                                {{ inst.nombre_ie }}
+                            </option>
                         {% endfor %}
                     </select>
                 </div>
 
-                <div class="h-4 w-px bg-calm-200 hidden sm:block"></div>
+                <div class="h-4 w-px bg-calm-200 dark:bg-calm-700 hidden sm:block"></div>
 
-                <span
-                    class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider hidden md:block">Contexto:</span>
+                <span class="text-[10px] font-extrabold text-slate-400 dark:text-stone-400 uppercase tracking-wider hidden md:block">Contexto:</span>
 
-                <!-- Selectores Dinámicos en Cascada -->
+                <!-- Selectores Dinámicos -->
                 <div class="flex gap-2 items-center" id="selector-contexto-dual">
-                    <!-- Selector de Área -->
-                    <select name="contexto_activo" hx-get="/api/selector-grados?institucion_id={{ perfil.id }}"
-                        hx-target="#contenedor-grado-seccion" hx-trigger="change"
-                        class="bg-calm-50 border border-calm-200 text-zen-800 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
+                    <!-- Selector Área -->
+                    <select name="contexto_activo" 
+                            hx-get="/api/selector-grados?institucion_id={{ perfil.id }}" 
+                            hx-target="#contenedor-grado-seccion" 
+                            hx-trigger="change"
+                            class="bg-calm-50 dark:bg-calm-800 border border-calm-200 dark:border-calm-700 text-zen-800 dark:text-zen-400 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
                         {% for a in areas %}
-                        <option value="{{ a }}">{{ a }}</option>
+                            <option value="{{ a }}" class="bg-white dark:bg-calm-900 text-slate-700 dark:text-calm-100">{{ a }}</option>
                         {% endfor %}
                     </select>
 
-                    <!-- Contenedor dinámico Grado + Sección -->
+                    <!-- Grado + Sección -->
                     <div id="contenedor-grado-seccion" class="flex gap-2 items-center">
-                        <select name="grado_activo"
-                            hx-get="/api/selector-secciones?institucion_id={{ perfil.id }}&contexto_activo={{ areas[0] if areas else 'General' }}"
-                            hx-target="next select" hx-trigger="change"
-                            class="bg-calm-50 border border-calm-200 text-zen-800 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
+                        <select name="grado_activo" 
+                                hx-get="/api/selector-secciones?institucion_id={{ perfil.id }}&contexto_activo={{ areas[0] if areas else 'General' }}" 
+                                hx-target="next select" 
+                                hx-trigger="change"
+                                class="bg-calm-50 dark:bg-calm-800 border border-calm-200 dark:border-calm-700 text-zen-800 dark:text-zen-400 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
                             {% for g in grados %}
-                            <option value="{{ g }}">{{ g }}</option>
+                                <option value="{{ g }}" class="bg-white dark:bg-calm-900 text-slate-700 dark:text-calm-100">{{ g }}</option>
                             {% endfor %}
                         </select>
 
-                        <select name="seccion_activa"
-                            class="bg-calm-50 border border-calm-200 text-zen-800 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
+                        <select name="seccion_activa" 
+                                class="bg-calm-50 dark:bg-calm-800 border border-calm-200 dark:border-calm-700 text-zen-800 dark:text-zen-400 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
                             {% for s in secciones %}
-                            <option value="{{ s }}">Secc. {{ s }}</option>
+                                <option value="{{ s }}" class="bg-white dark:bg-calm-900 text-slate-700 dark:text-calm-100">Secc. {{ s }}</option>
                             {% endfor %}
                         </select>
                     </div>
                 </div>
 
-                <!-- Botón toggle de alternancia -->
+                <!-- Botón Alternar Historial -->
                 <div id="contenedor-toggle-filtro" class="ml-auto">
                     <button hx-get="/filtrar-historial?ver_todos=true" hx-target="#lista-historial" hx-swap="innerHTML"
-                        class="text-[11px] font-bold text-slate-600 hover:text-zen-700 bg-calm-50 border border-calm-200 px-3 py-1.5 rounded-xl transition whitespace-nowrap">
+                        class="text-[11px] font-bold text-slate-600 dark:text-stone-300 hover:text-zen-700 dark:hover:text-zen-400 bg-calm-50 dark:bg-calm-800 border border-calm-200 dark:border-calm-700 px-3 py-1.5 rounded-xl transition whitespace-nowrap">
                         Ver todo el historial
                     </button>
                 </div>
             </div>
         </header>
 
-        <!-- Zona del Documento / Chat (Scrollable) -->
+        <!-- Zona del Documento / Chat -->
         <div id="area-documento" class="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col items-center">
-
-            <!-- Estado Vacío Inicial -->
             <div class="w-full max-w-3xl mt-10 md:mt-20 text-center">
-                <div
-                    class="h-16 w-16 mx-auto bg-calm-100 rounded-3xl flex items-center justify-center text-3xl mb-6 shadow-inner">
+                <div class="h-16 w-16 mx-auto bg-calm-100 dark:bg-calm-900 rounded-3xl flex items-center justify-center text-3xl mb-6 shadow-inner text-zen-700 dark:text-zen-400 border border-transparent dark:border-calm-700/60">
                     ✨
                 </div>
-                <h2 class="text-2xl font-extrabold text-calm-800 mb-2">¿Qué planificaremos hoy?</h2>
-                <p class="text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
-                    Tus documentos estarán alineados automáticamente al área seleccionada arriba y a los datos de tu
-                    institución.
+                <h2 class="text-2xl font-extrabold text-calm-800 dark:text-white mb-2">¿Qué planificaremos hoy?</h2>
+                <p class="text-sm text-slate-500 dark:text-stone-400 max-w-md mx-auto leading-relaxed">
+                    Tus documentos estarán alineados automáticamente al área seleccionada arriba y a los datos de tu institución.
                 </p>
             </div>
-
         </div>
 
-        <!-- Zona Fija de Entrada de Texto (Bottom) -->
-        <div class="w-full bg-white border-t border-calm-200 shrink-0 print:hidden">
+        <!-- Zona Entrada de Texto -->
+        <div class="w-full bg-white dark:bg-calm-900 border-t border-calm-200 dark:border-calm-700 shrink-0 print:hidden transition-colors duration-200">
             <div class="w-full max-w-4xl mx-auto p-4 sm:p-6">
 
-                <!-- Píldoras de Atajos Rápidos -->
+                <!-- Atajos Rápidos -->
                 <div class="flex gap-2 overflow-x-auto pb-3 mb-1 snap-x scrollbar-hide" id="pildoras-atajos">
-                    <button
-                        onclick="insertarPrompt('Crea una sesión de aprendizaje de 90 minutos usando los procesos pedagógicos.')"
-                        class="snap-start shrink-0 rounded-full border border-calm-200 bg-calm-50 px-4 py-1.5 text-xs font-bold text-slate-600 hover:border-zen-600 hover:text-zen-700 transition">📝
-                        Sesión 90 min</button>
-                    <button
-                        onclick="insertarPrompt('Elabora una rúbrica de evaluación formativa con escala AD, A, B, C.')"
-                        class="snap-start shrink-0 rounded-full border border-calm-200 bg-calm-50 px-4 py-1.5 text-xs font-bold text-slate-600 hover:border-zen-600 hover:text-zen-700 transition">📊
-                        Rúbrica CNEB</button>
+                    <button onclick="insertarPrompt('Crea una sesión de aprendizaje de 90 minutos usando los procesos pedagógicos.')"
+                        class="snap-start shrink-0 rounded-full border border-calm-200 dark:border-calm-700 bg-calm-50 dark:bg-calm-800 px-4 py-1.5 text-xs font-bold text-slate-600 dark:text-stone-300 hover:border-zen-600 dark:hover:border-zen-400 hover:text-zen-700 dark:hover:text-zen-400 transition">
+                        📝 Sesión 90 min
+                    </button>
+                    <button onclick="insertarPrompt('Elabora una rúbrica de evaluación formativa con escala AD, A, B, C.')"
+                        class="snap-start shrink-0 rounded-full border border-calm-200 dark:border-calm-700 bg-calm-50 dark:bg-calm-800 px-4 py-1.5 text-xs font-bold text-slate-600 dark:text-stone-300 hover:border-zen-600 dark:hover:border-zen-400 hover:text-zen-700 dark:hover:text-zen-400 transition">
+                        📊 Rúbrica CNEB
+                    </button>
                     <button onclick="insertarPrompt('Redacta un oficio formal dirigido a la UGEL justificando...')"
-                        class="snap-start shrink-0 rounded-full border border-calm-200 bg-calm-50 px-4 py-1.5 text-xs font-bold text-slate-600 hover:border-zen-600 hover:text-zen-700 transition">🏢
-                        Oficio UGEL</button>
-                    <button
-                        onclick="insertarPrompt('Genera una situación significativa contextualizada para mis estudiantes sobre...')"
-                        class="snap-start shrink-0 rounded-full border border-calm-200 bg-calm-50 px-4 py-1.5 text-xs font-bold text-slate-600 hover:border-zen-600 hover:text-zen-700 transition">🌍
-                        Situación</button>
+                        class="snap-start shrink-0 rounded-full border border-calm-200 dark:border-calm-700 bg-calm-50 dark:bg-calm-800 px-4 py-1.5 text-xs font-bold text-slate-600 dark:text-stone-300 hover:border-zen-600 dark:hover:border-zen-400 hover:text-zen-700 dark:hover:text-zen-400 transition">
+                        🏢 Oficio UGEL
+                    </button>
+                    <button onclick="insertarPrompt('Genera una situación significativa contextualizada para mis estudiantes sobre...')"
+                        class="snap-start shrink-0 rounded-full border border-calm-200 dark:border-calm-700 bg-calm-50 dark:bg-calm-800 px-4 py-1.5 text-xs font-bold text-slate-600 dark:text-stone-300 hover:border-zen-600 dark:hover:border-zen-400 hover:text-zen-700 dark:hover:text-zen-400 transition">
+                        🌍 Situación
+                    </button>
                 </div>
 
-                <!-- Formulario Principal -->
+                <!-- Formulario -->
                 <form hx-post="/enviar-mensaje" hx-include="#selector-contexto-dual" hx-target="#area-documento"
                     hx-indicator="#indicador-carga"
                     hx-on="htmx:afterRequest: if(event.detail.successful) { this.reset(); document.getElementById('prompt-input').style.height = 'auto'; }"
                     enctype="multipart/form-data"
-                    class="relative flex items-end gap-3 bg-white rounded-2xl border border-calm-200 p-2 shadow-sm focus-within:border-zen-600 focus-within:ring-4 focus-within:ring-zen-50 transition-all">
+                    class="relative flex items-end gap-3 bg-white dark:bg-calm-800 rounded-2xl border border-calm-200 dark:border-calm-700 p-2 shadow-sm focus-within:border-zen-600 dark:focus-within:border-zen-400 focus-within:ring-4 focus-within:ring-zen-50 dark:focus-within:ring-zen-900/30 transition-all">
 
-                    <!-- Botón Adjuntar Archivo -->
-                    <label
-                        class="cursor-pointer p-3 text-slate-400 hover:text-zen-700 hover:bg-zen-50 rounded-xl transition shrink-0">
+                    <!-- Adjuntar -->
+                    <label class="cursor-pointer p-3 text-slate-400 dark:text-stone-400 hover:text-zen-700 dark:hover:text-zen-400 hover:bg-zen-50 dark:hover:bg-calm-700 rounded-xl transition shrink-0">
                         <input type="file" name="foto" class="hidden" accept="image/*, .pdf">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -234,14 +243,14 @@
                         </svg>
                     </label>
 
-                    <!-- Input de Texto Expandible -->
+                    <!-- Textarea -->
                     <textarea id="prompt-input" name="prompt" rows="1"
                         placeholder="Describe lo que necesitas pedagógicamente..." required
-                        class="w-full max-h-40 resize-none border-none bg-transparent py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-0"></textarea>
+                        class="w-full max-h-40 resize-none border-none bg-transparent py-3 text-sm text-slate-800 dark:text-calm-100 placeholder-slate-400 dark:placeholder-stone-400 focus:outline-none focus:ring-0"></textarea>
 
                     <!-- Botón Enviar -->
                     <button type="submit"
-                        class="p-3 text-white bg-zen-700 hover:bg-zen-800 rounded-xl transition shadow-md shrink-0 mb-0.5 mr-0.5">
+                        class="p-3 text-white bg-zen-700 hover:bg-zen-800 dark:bg-zen-600 dark:hover:bg-zen-700 rounded-xl transition shadow-md shrink-0 mb-0.5 mr-0.5">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
@@ -251,7 +260,7 @@
 
                 <!-- Indicador de Carga -->
                 <div id="indicador-carga"
-                    class="htmx-indicator flex items-center justify-center gap-2 text-xs font-bold text-zen-700 mt-3">
+                    class="htmx-indicator flex items-center justify-center gap-2 text-xs font-bold text-zen-700 dark:text-zen-400 mt-3">
                     <span class="animate-spin text-lg">🌀</span> Procesando normativa y redactando...
                 </div>
 
@@ -260,7 +269,6 @@
 
     </main>
 
-    <!-- Lógica UI simple -->
     <script>
         const textarea = document.getElementById('prompt-input');
         textarea.addEventListener('input', function () {
@@ -275,8 +283,7 @@
             textarea.style.height = textarea.scrollHeight + 'px';
         }
     </script>
-
-    <!-- Librería MathJax -->
+    
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>

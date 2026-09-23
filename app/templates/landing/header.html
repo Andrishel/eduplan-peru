@@ -3,33 +3,34 @@
 
         <!-- Logo e Identidad -->
         <a href="/" class="flex items-center gap-3 group">
-            <div
-                class="flex h-10 w-10 items-center justify-center rounded-2xl bg-zen-700 text-xl font-black text-white shadow-sm group-hover:scale-105 transition">
+            <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-zen-700 text-xl font-black text-white shadow-sm group-hover:scale-105 transition-transform">
                 EP
             </div>
             <div>
                 <span class="text-xl font-black tracking-tight text-calm-800 block leading-tight">EduPlan Perú</span>
-                <span class="text-[10px] font-bold text-zen-700 tracking-wider uppercase block">Gestión
-                    Curricular</span>
+                <span class="text-[10px] font-bold text-zen-700 tracking-wider uppercase block">Gestión Curricular</span>
             </div>
         </a>
 
-        <!-- Enlaces Centrales -->
-        <nav class="hidden md:flex items-center gap-8 text-xs font-extrabold text-slate-600">
-            <a href="#beneficios" class="hover:text-zen-700 transition">Beneficios</a>
-            <a href="#planes" class="hover:text-zen-700 transition">Planes y Precios</a>
-            <a href="#faq" class="hover:text-zen-700 transition">Preguntas Frecuentes</a>
+        <!-- Enlaces Centrales con efecto Píldora (Hover Background) -->
+        <nav class="hidden md:flex items-center gap-2 text-xs font-extrabold text-slate-600">
+            <a href="#beneficios" class="px-4 py-2.5 rounded-xl hover:bg-calm-100 hover:text-zen-700 transition-all">Beneficios</a>
+            <a href="#planes" class="px-4 py-2.5 rounded-xl hover:bg-calm-100 hover:text-zen-700 transition-all">Planes y Precios</a>
+            <a href="#faq" class="px-4 py-2.5 rounded-xl hover:bg-calm-100 hover:text-zen-700 transition-all">Preguntas Frecuentes</a>
         </nav>
 
         <!-- Acciones -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+            <!-- Soporte también con efecto píldora -->
             <a href="https://wa.me/51922498580?text=Hola,%20tengo%20consultas%20sobre%20EduPlan%20Perú" target="_blank"
-                class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-600 hover:text-zen-700 transition">
+                class="hidden sm:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-calm-100 hover:text-zen-700 transition-all">
                 <span>💬 Soporte</span>
             </a>
+            
+            <!-- Botón Principal -->
             <a href="/auth"
-                class="rounded-full bg-zen-700 px-5 py-2.5 text-xs font-extrabold text-white shadow hover:bg-zen-800 hover:shadow-md transition">
-                Ingresar al Sistema
+                class="ml-2 rounded-full bg-zen-700 px-6 py-2.5 text-xs font-extrabold text-white shadow hover:bg-zen-800 hover:shadow-md hover:-translate-y-0.5 transition-all">
+                Iniciar Sesión
             </a>
         </div>
 

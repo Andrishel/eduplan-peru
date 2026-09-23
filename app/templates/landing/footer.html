@@ -1,66 +1,98 @@
-<footer class="bg-[#0b332d] text-emerald-100/80 pt-16 pb-12 border-t border-[#082622] text-xs">
-    <div class="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
-        
-        <!-- Columna 1: Presentación -->
-        <div class="space-y-3">
-            <div class="flex items-center gap-2.5">
-                <div class="h-9 w-9 rounded-xl bg-zen-600 text-white font-black flex items-center justify-center text-base shadow">
-                    EP
+<footer class="bg-zen-900 text-white pt-16 pb-12 border-t border-zen-800">
+    <div class="max-w-6xl mx-auto px-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 pb-12 border-b border-zen-800/80">
+            
+            <!-- Columna 1: Identidad -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-zen-900 text-lg font-black shadow-sm">
+                        EP
+                    </div>
+                    <div>
+                        <span class="text-lg font-black tracking-tight text-white block leading-tight">EduPlan Perú</span>
+                        <span class="text-[10px] font-bold text-zen-400 tracking-wider uppercase block">Gestión Curricular</span>
+                    </div>
                 </div>
-                <span class="text-xl font-extrabold text-white tracking-tight">EduPlan Perú</span>
+                <p class="text-xs text-zen-200/80 leading-relaxed">
+                    Asistencia técnica, curricular y directiva para instituciones educativas públicas y privadas del Perú.
+                </p>
+                <div class="inline-flex items-center gap-2 bg-zen-950/60 border border-zen-800 px-3 py-1.5 rounded-xl text-[11px] font-bold text-zen-400">
+                    <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Plataforma Activa &bull; Ciclo Escolar 2026
+                </div>
             </div>
-            <p class="text-emerald-200/70 leading-relaxed text-xs">
-                Asistencia técnica, curricular y directiva para instituciones educativas públicas y privadas del Perú.
-            </p>
-            <div class="pt-2 flex items-center gap-2 text-xs font-semibold text-emerald-300">
-                <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Plataforma Activa • Ciclo Escolar 2026</span>
-            </div>
-        </div>
 
-        <!-- Columna 2: Cobertura Pedagógica -->
-        <div class="space-y-2.5">
-            <p class="font-extrabold text-white uppercase tracking-wider text-xs">Niveles Educativos</p>
-            <ul class="space-y-2 text-emerald-200/70 text-xs">
-                <li class="hover:text-white transition cursor-default">Inicial (Ciclos I y II)</li>
-                <li class="hover:text-white transition cursor-default">Primaria Regular (Ciclos III, IV y V)</li>
-                <li class="hover:text-white transition cursor-default">Secundaria (Ciclos VI y VII)</li>
-                <li class="hover:text-white transition cursor-default">Educación Básica Alternativa (EBA)</li>
-            </ul>
-        </div>
-
-        <!-- Columna 3: Marco Normativo -->
-        <div class="space-y-2.5">
-            <p class="font-extrabold text-white uppercase tracking-wider text-xs">Base Normativa MINEDU</p>
-            <ul class="space-y-2 text-emerald-200/70 text-xs">
-                <li class="hover:text-white transition cursor-default">Currículo Nacional (CNEB)</li>
-                <li class="hover:text-white transition cursor-default">RVM N° 094-2020-MINEDU</li>
-                <li class="hover:text-white transition cursor-default">Comités de Gestión Escolar 2026</li>
-                <li class="hover:text-white transition cursor-default">Ley de Reforma Magisterial N° 29944</li>
-            </ul>
-        </div>
-
-        <!-- Columna 4: Contacto Institucional -->
-        <div class="space-y-2.5">
-            <p class="font-extrabold text-white uppercase tracking-wider text-xs">Contacto y Convenios</p>
-            <p class="text-emerald-200/70 text-xs leading-relaxed">
-                Coordinación directa para colegios, directivos y soporte pedagógico:
-            </p>
+            <!-- Columna 2: Niveles Educativos (Texto estático sin hover engañoso) -->
             <div>
-                <a href="https://wa.me/51922498580?text=Hola,%20solicito%20información%20sobre%20EduPlan%20Perú" target="_blank" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-zen-600 hover:bg-zen-700 text-white font-bold text-xs transition shadow-sm">
+                <h4 class="text-xs font-black uppercase tracking-wider text-zen-300 mb-4">Niveles Educativos</h4>
+                <ul class="space-y-2.5 text-xs text-zen-200/90 select-none">
+                    <li>
+                        <span class="font-bold text-white block">Inicial</span>
+                        <span class="text-[11px] text-zen-400">Aulas de 3, 4 y 5 años </span>
+                    </li>
+                    <li>
+                        <span class="font-bold text-white block">Primaria Regular</span>
+                        <span class="text-[11px] text-zen-400">De 1° a 6° grado </span>
+                    </li>
+                    <li>
+                        <span class="font-bold text-white block">Secundaria</span>
+                        <span class="text-[11px] text-zen-400">De 1° a 5° año </span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Columna 3: Base Normativa MINEDU -->
+            <div>
+                <h4 class="text-xs font-black uppercase tracking-wider text-zen-300 mb-4">Base Normativa MINEDU</h4>
+                <ul class="space-y-2.5 text-xs text-zen-200/80">
+                    <li>
+                        <a href="https://www.minedu.gob.pe/curriculo/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition flex items-center gap-1.5">
+                            <span>Currículo Nacional (CNEB)</span>
+                            <span class="text-[10px] text-zen-400">↗</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.minedu.gob.pe/curriculo/pdf/rvm-094-2020-minedu.pdf" target="_blank" rel="noopener noreferrer" class="hover:text-white transition flex items-center gap-1.5">
+                            <span>RVM N° 094-2020-MINEDU</span>
+                            <span class="text-[10px] text-zen-400">↗</span>
+                        </a>
+                    </li>
+                    <li>
+                        <span class="text-zen-200/70 block">Comités de Gestión Escolar 2026</span>
+                    </li>
+                    <li>
+                        <span class="text-zen-200/70 block">Marco de Buen Desempeño Docente</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Columna 4: Contacto y Convenios -->
+            <div>
+                <h4 class="text-xs font-black uppercase tracking-wider text-zen-300 mb-4">Contacto y Convenios</h4>
+                <p class="text-xs text-zen-200/80 mb-4 leading-relaxed">
+                    Coordinación directa para colegios, directivos y soporte pedagógico:
+                </p>
+                <a href="https://wa.me/51922498580?text=Hola,%20solicito%20información%20sobre%20EduPlan%20Perú" target="_blank" rel="noopener noreferrer"
+                    class="inline-flex items-center justify-center gap-2 w-full rounded-xl bg-teal-500 hover:bg-teal-400 px-4 py-2.5 text-xs font-extrabold text-zen-950 transition shadow-lg shadow-teal-500/20">
                     <span>💬 WhatsApp Oficial</span>
                 </a>
+                <span class="block text-[11px] text-zen-400 mt-4">
+                    Desarrollado y administrado por Andrishel Alvarez M.
+                </span>
             </div>
-            <p class="text-emerald-300/60 text-[11px] pt-1">
-                Desarrollado y administrado por Andrishel Alvarez M.
-            </p>
+
         </div>
 
-    </div>
-
-    <!-- Barra Inferior de Créditos -->
-    <div class="max-w-6xl mx-auto px-6 pt-6 border-t border-emerald-900/80 flex flex-col sm:flex-row items-center justify-between text-xs text-emerald-200/60 gap-3">
-        <p>© 2026 EduPlan Perú. Todos los derechos reservados.</p>
-        <p class="text-emerald-200/50">Comprometidos con la excelencia de la educación peruana.</p>
+        <!-- Barra Inferior Legal -->
+        <div class="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zen-400">
+            <p>&copy; 2026 EduPlan Perú. Todos los derechos reservados.</p>
+            <div class="flex items-center gap-6">
+                <a href="/terminos" class="hover:text-white transition underline underline-offset-4 font-semibold">
+                    Términos y Condiciones del Servicio
+                </a>
+                <span class="hidden md:inline text-zen-600">&bull;</span>
+                <span class="hidden md:inline text-zen-400">Comprometidos con la educación peruana.</span>
+            </div>
+        </div>
     </div>
 </footer>

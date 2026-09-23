@@ -56,7 +56,17 @@ async def landing_page(request: Request):
     return templates.TemplateResponse(request=request, name="landing.html")
 
 @app.get("/auth", response_class=HTMLResponse)
-async def pagina_auth(request: Request):
+async def pagina_auth(
+    request: Request,
+    usuario: Optional[Usuario] = Depends(obtener_usuario_actual),
+    session: Session = Depends(obtener_session)
+):
+    if usuario:
+        instituciones = session.exec(
+            select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)
+        ).all()
+        destino = "/app" if instituciones else "/onboarding"
+        return RedirectResponse(url=destino, status_code=status.HTTP_303_SEE_OTHER)
     return templates.TemplateResponse(request=request, name="auth.html")
 
 @app.get("/app", response_class=HTMLResponse)
@@ -76,22 +86,18 @@ async def workspace(
     if not instituciones:
         return RedirectResponse(url="/onboarding", status_code=status.HTTP_303_SEE_OTHER)
 
-    # Determinar institución activa
     perfil_activo = None
     if institucion_id:
         perfil_activo = session.get(PerfilInstitucional, institucion_id)
     
-    # Si no se envió ID, priorizar un colegio real sobre el Espacio Libre
     if not perfil_activo:
         colegio_real = next((i for i in instituciones if i.nombre_ie != "Espacio Personal / Libre"), None)
         perfil_activo = colegio_real if colegio_real else instituciones[0]
 
-    # Cargas de esta institución específica
     cargas = session.exec(
         select(CargaAcademica).where(CargaAcademica.institucion_id == perfil_activo.id)
     ).all()
 
-    # Si es colegio real con cargas
     if cargas:
         areas_disponibles = sorted(list(set(c.area for c in cargas)))
         primera_area = areas_disponibles[0]
@@ -125,7 +131,6 @@ async def workspace(
         }
     )
 
-# Endpoint HTMX: cuando cambia el Área o la Institución
 @app.get("/api/selector-grados", response_class=HTMLResponse)
 async def selector_grados(
     institucion_id: int,
@@ -160,7 +165,6 @@ async def selector_grados(
         </select>
     """)
 
-# Endpoint HTMX: cuando cambia el Grado
 @app.get("/api/selector-secciones", response_class=HTMLResponse)
 async def selector_secciones(
     institucion_id: int,
@@ -213,8 +217,8 @@ async def registro(
     session.refresh(nuevo_usuario)
 
     token = crear_token_sesion(nuevo_usuario.id)
-    response = RedirectResponse(url="/onboarding", status_code=status.HTTP_303_SEE_OTHER) 
-    response.set_cookie(key="session_token", value=token, httponly=True, max_age=604800)
+    response = Response(status_code=status.HTTP_200_OK, headers={"HX-Redirect": "/onboarding"})
+    response.set_cookie(key="session_token", value=token, httponly=True, max_age=604800, samesite="lax")
     return response
 
 @app.post("/auth/login")
@@ -229,9 +233,15 @@ async def login(
     if not usuario or not verificar_password(password, usuario.password_hash):
         return HTMLResponse("<p class='text-red-500 text-xs font-bold text-center mt-2'>Credenciales incorrectas.</p>", status_code=401)
 
+    instituciones = session.exec(
+        select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)
+    ).all()
+
+    destino = "/app" if instituciones else "/onboarding"
+
     token = crear_token_sesion(usuario.id)
-    response = RedirectResponse(url="/onboarding", status_code=status.HTTP_303_SEE_OTHER) 
-    response.set_cookie(key="session_token", value=token, httponly=True, max_age=604800)
+    response = Response(status_code=status.HTTP_200_OK, headers={"HX-Redirect": destino})
+    response.set_cookie(key="session_token", value=token, httponly=True, max_age=604800, samesite="lax")
     return response
 
 @app.get("/logout")
@@ -271,7 +281,6 @@ async def completar_onboarding(
 
     form_data = await request.form()
     
-    # Limpiar instituciones previas para evitar duplicados si rehace el onboarding
     colegios_previos = session.exec(select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)).all()
     for col in colegios_previos:
         cargas = session.exec(select(CargaAcademica).where(CargaAcademica.institucion_id == col.id)).all()
@@ -279,7 +288,6 @@ async def completar_onboarding(
         session.delete(col)
     session.commit()
 
-    # 1. Espacio Libre / Tutorías
     if form_data.get("es_independiente") == "on":
         espacio_libre = PerfilInstitucional(
             usuario_id=usuario.id,
@@ -292,7 +300,6 @@ async def completar_onboarding(
         )
         session.add(espacio_libre)
 
-    # 2. Procesar Colegios Dinámicos
     num_colegios_str = form_data.get("num_colegios", "0")
     try:
         num_colegios = int(num_colegios_str)
@@ -325,12 +332,10 @@ async def completar_onboarding(
         session.commit()
         session.refresh(nuevo_colegio)
 
-        # 3. Procesar Bloques de Carga Académica y Cruce Cartesiano
         bloques = form_data.getlist(f"colegio_{i}_bloques[]")
         for bId in bloques:
             nivel = form_data.get(f"col_{i}_b{bId}_nivel", "Secundaria")
             
-            # Verificar si seleccionó "Otro"
             area = form_data.get(f"col_{i}_b{bId}_area", "")
             if area == "Otro":
                 area = form_data.get(f"col_{i}_b{bId}_area_otro", "Otro Curso").strip()
@@ -491,50 +496,40 @@ async def obtener_modal_perfil(
     if not usuario:
         return HTMLResponse("<p>No autorizado</p>", status_code=401)
 
-    perfil = session.exec(select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)).first()
+    instituciones = session.exec(
+        select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)
+    ).all()
+
+    datos_sedes = []
+    for inst in instituciones:
+        cargas = session.exec(
+            select(CargaAcademica).where(CargaAcademica.institucion_id == inst.id)
+        ).all()
+        datos_sedes.append({"institucion": inst, "cargas": cargas})
+
     return templates.TemplateResponse(
         request=request,
         name="components/modal_perfil.html",
-        context={"perfil": perfil}
+        context={"usuario": usuario, "datos_sedes": datos_sedes}
     )
 
-@app.post("/guardar-perfil", response_class=HTMLResponse)
-async def guardar_perfil(
-    request: Request,
-    nombre_ie: str = Form(...),
-    ugel: str = Form(...),
-    lema: Optional[str] = Form(None),
-    nombre_docente: str = Form(...),
-    area_curricular: str = Form(...),
-    grado_seccion: str = Form(...),
-    enfoque_institucional: Optional[str] = Form(None),
+@app.delete("/api/eliminar-carga/{carga_id}")
+async def eliminar_carga(
+    carga_id: int,
     usuario: Optional[Usuario] = Depends(obtener_usuario_actual),
     session: Session = Depends(obtener_session)
 ):
     if not usuario:
-        return HTMLResponse("<p>No autorizado</p>", status_code=401)
+        return HTMLResponse(status_code=401)
 
-    perfil = session.exec(select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)).first()
-    if not perfil:
-        perfil = PerfilInstitucional(usuario_id=usuario.id)
-        session.add(perfil)
-        
-    perfil.nombre_ie = nombre_ie.strip()
-    perfil.ugel = ugel.strip()
-    perfil.lema = lema.strip() if lema else None
-    perfil.nombre_docente = nombre_docente.strip()
-    perfil.area_curricular = area_curricular.strip()
-    perfil.grado_seccion = grado_seccion.strip()
-    perfil.enfoque_institucional = enfoque_institucional.strip() if enfoque_institucional else None
-
-    session.commit()
-    session.refresh(perfil)
-
-    return templates.TemplateResponse(
-        request=request,
-        name="components/perfil_badge.html",
-        context={"perfil": perfil}
-    )
+    carga = session.get(CargaAcademica, carga_id)
+    if carga:
+        inst = session.get(PerfilInstitucional, carga.institucion_id)
+        if inst and inst.usuario_id == usuario.id:
+            session.delete(carga)
+            session.commit()
+            return HTMLResponse("")
+    return HTMLResponse(status_code=400)
 
 @app.get("/descargar/word/{planificacion_id}")
 async def descargar_word(
@@ -633,3 +628,10 @@ async def filtrar_historial(
     )
     
     return HTMLResponse(content=contenido_lista + boton_toggle)
+
+@app.get("/terminos", response_class=HTMLResponse)
+async def terminos_condiciones(request: Request):
+    return templates.TemplateResponse(
+        request=request, 
+        name="terminos.html"
+    )
