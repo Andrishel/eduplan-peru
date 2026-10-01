@@ -48,6 +48,17 @@
 
     <!-- Contenido Formateado -->
     <div id="documento-imprimible-{{ planificacion_id }}" class="p-6 md:p-10 bg-white">
+
+      {% if perfil and perfil.logo_url and modo_generacion != 'LIBRE' %}
+      <div class="flex items-center gap-4 border-b border-calm-200 pb-4 mb-6">
+        <img src="{{ perfil.logo_url if perfil.logo_url.startswith('http') else '/static/uploads/' ~ perfil.logo_url }}"
+          alt="Logo I.E." class="h-14 w-auto object-contain">
+        <div>
+          <h2 class="text-base font-black text-slate-800 uppercase tracking-tight">{{ perfil.nombre_ie }}</h2>
+          <p class="text-xs text-slate-500 font-semibold">{{ perfil.ugel }} • Planificación Curricular</p>
+        </div>
+      </div>
+      {% endif %}
       <!-- La clase "prose" de Tailwind da estilo automático a tablas, listas y negritas -->
       <!-- El filtro | safe evita que Jinja2 escape el HTML -->
       <div class="prose prose-sm md:prose-base prose-slate max-w-none 
@@ -66,22 +77,23 @@
 
 <!-- SOLO se ejecuta si es un mensaje recién creado -->
 {% if es_nuevo %}
-  <!-- OOB directo al ID del index -->
-  <button hx-swap-oob="afterbegin:#lista-historial" hx-get="/historial/{{ planificacion_id }}" hx-target="#area-documento"
-    class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-calm-50 dark:hover:bg-calm-800 transition group flex flex-col gap-0.5 border-l-2 border-zen-600 bg-zen-50/40 dark:bg-zen-900/20 mb-1">
-    
-    <span class="text-xs font-extrabold text-slate-800 dark:text-calm-200 truncate group-hover:text-zen-700 dark:group-hover:text-zen-400 transition">
-        {{ prompt_usuario[:45] | capitalize }}{% if prompt_usuario|length > 45 %}...{% endif %}
-    </span>
-    
-    {% if modo_generacion == 'LIBRE' %}
-        <span class="text-[10px] text-slate-500 font-bold tracking-wide">💭 Asistente Libre</span>
-    {% else %}
-        <span class="text-[10px] text-slate-500 truncate font-semibold">
-            {{ area_contexto }} • {{ grado_contexto }}
-        </span>
-    {% endif %}
-  </button>
+<!-- OOB directo al ID del index -->
+<button hx-swap-oob="afterbegin:#lista-historial" hx-get="/historial/{{ planificacion_id }}" hx-target="#area-documento"
+  class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-calm-50 dark:hover:bg-calm-800 transition group flex flex-col gap-0.5 border-l-2 border-zen-600 bg-zen-50/40 dark:bg-zen-900/20 mb-1">
+
+  <span
+    class="text-xs font-extrabold text-slate-800 dark:text-calm-200 truncate group-hover:text-zen-700 dark:group-hover:text-zen-400 transition">
+    {{ prompt_usuario[:45] | capitalize }}{% if prompt_usuario|length > 45 %}...{% endif %}
+  </span>
+
+  {% if modo_generacion == 'LIBRE' %}
+  <span class="text-[10px] text-slate-500 font-bold tracking-wide">💭 Asistente Libre</span>
+  {% else %}
+  <span class="text-[10px] text-slate-500 truncate font-semibold">
+    {{ area_contexto }} • {{ grado_contexto }}
+  </span>
+  {% endif %}
+</button>
 {% endif %}
 
 <!-- Estilo CSS específico para que al imprimir no salga la barra lateral ni el menú -->
@@ -116,26 +128,40 @@
       max-width: 100% !important;
       font-size: 12pt !important;
     }
+
     /* Reglas MÁGICAS para evitar que las tablas se rompan en PDF */
-    table { page-break-inside: auto; width: 100%; }
-    tr    { page-break-inside: avoid; page-break-after: auto; }
-    thead { display: table-header-group; }
-    tfoot { display: table-footer-group; }
+    table {
+      page-break-inside: auto;
+      width: 100%;
+    }
+
+    tr {
+      page-break-inside: avoid;
+      page-break-after: auto;
+    }
+
+    thead {
+      display: table-header-group;
+    }
+
+    tfoot {
+      display: table-footer-group;
+    }
   }
 </style>
 
 <script>
   function generarPDF(id) {
     const elemento = document.getElementById('documento-imprimible-' + id);
-    
+
     // Ocultar temporalmente bordes o sombras si lo deseas para el PDF
     const opciones = {
-      margin:       [10, 10, 15, 10], // Márgenes: Arriba, Derecha, Abajo, Izquierda
-      filename:     'Sesion_EduPlan_' + id + '.pdf',
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2 },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak:    { mode: ['css', 'legacy'] } // <-http://127.0.0.1:8000/docs-- ¡Añadir esta línea!
+      margin: [10, 10, 15, 10], // Márgenes: Arriba, Derecha, Abajo, Izquierda
+      filename: 'Sesion_EduPlan_' + id + '.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'] } // <-http://127.0.0.1:8000/docs-- ¡Añadir esta línea!
     };
 
     html2pdf().set(opciones).from(elemento).save();

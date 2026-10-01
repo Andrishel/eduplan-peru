@@ -11,7 +11,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select, update
-
+from app.services.storage_service import subir_logo_supabase
 from app.database import crear_db_y_tablas, obtener_session
 from app.models import PerfilInstitucional, Planificacion, Usuario, CargaAcademica, Coleccion
 from app.services.gemini_service import responder_consulta
@@ -334,22 +334,19 @@ async def completar_onboarding(
 
         ugel = form_data.get(f"colegio_{i}_ugel", "")
         logo_file = form_data.get(f"colegio_{i}_logo")
-        nombre_logo = None
+        logo_url = None
         
         if logo_file and getattr(logo_file, "filename", ""):
-            ext = os.path.splitext(logo_file.filename)[1].lower()
-            if ext in [".png", ".jpg", ".jpeg", ".webp"]:
-                nombre_logo = f"logo_{usuario.id}_{uuid.uuid4().hex[:8]}{ext}"
-                ruta = os.path.join(UPLOAD_DIR, nombre_logo)
-                with open(ruta, "wb") as buffer:
-                    shutil.copyfileobj(logo_file.file, buffer)
+            contenido_bytes = await logo_file.read()
+            if contenido_bytes:
+                logo_url = subir_logo_supabase(contenido_bytes, logo_file.filename, usuario.id)
 
         nuevo_colegio = PerfilInstitucional(
             usuario_id=usuario.id,
             nombre_ie=nombre_ie.strip(),
             ugel=ugel.strip(),
             nombre_docente=usuario.nombre_completo,
-            logo_url=nombre_logo
+            logo_url=logo_url
         )
         session.add(nuevo_colegio)
         session.commit()
@@ -473,6 +470,7 @@ async def enviar_mensaje(
             "planificacion_id": nueva_planificacion.id,
             "area_contexto": contexto_activo,
             "grado_contexto": grado_completo,
+            "perfil": perfil,
             "es_nuevo": True,
             "modo_generacion": modo_generacion
         }
@@ -492,6 +490,11 @@ async def cargar_historial_detalle(
     if not plan or plan.usuario_id != usuario.id:
         return HTMLResponse("<p class='text-red-500 text-sm'>No se encontró la planificación.</p>")
 
+    # Resolver el perfil institucional asociado a la planificación
+    perfil = None
+    if plan.institucion_id:
+        perfil = session.get(PerfilInstitucional, plan.institucion_id)
+
     html_crudo = markdown.markdown(plan.contenido_markdown, extensions=['tables', 'nl2br', 'fenced_code'])
     respuesta_html = sanitizar_contenido(html_crudo)
 
@@ -503,11 +506,11 @@ async def cargar_historial_detalle(
             "archivo_nombre": plan.archivo_adjunto,
             "respuesta_html": respuesta_html,
             "planificacion_id": plan.id,
+            "perfil": perfil,
             "es_nuevo": False,
             "modo_generacion": plan.modo_generacion
         }
     )
-
 # ==========================================
 # RUTAS DE CONFIGURACIÓN INSTITUCIONAL
 # ==========================================
