@@ -3,12 +3,17 @@ import os
 import secrets
 from itsdangerous import URLSafeTimedSerializer
 from typing import Optional
+from dotenv import load_dotenv
 
-SECRET_KEY = "eduplan_secret_key_super_segura_cambiar_en_produccion"
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY or "cambiar_en_produccion" in SECRET_KEY:
+    SECRET_KEY = secrets.token_hex(32)
+
 serializer = URLSafeTimedSerializer(SECRET_KEY)
 
 def hashear_password(password: str) -> str:
-    """Genera un hash seguro usando PBKDF2-HMAC-SHA256 con Salt aleatorio"""
     salt = secrets.token_hex(16)
     key = hashlib.pbkdf2_hmac(
         'sha256',
@@ -19,7 +24,6 @@ def hashear_password(password: str) -> str:
     return f"{salt}${key.hex()}"
 
 def verificar_password(password_plano: str, password_hash: str) -> bool:
-    """Verifica si la contraseña coincide con el hash almacenado"""
     try:
         salt, key_hex = password_hash.split('$')
         key_verificar = hashlib.pbkdf2_hmac(

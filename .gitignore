@@ -1,22 +1,7 @@
-# Entorno Virtual
-venv/
-env/
 .env
-
-# Base de datos SQLite local
-*.db
-*.sqlite
-*.sqlite3
-database.db
-
-# Subidas de usuarios (logos de colegios)
-app/static/uploads/*
-!app/static/uploads/.gitkeep
-
-# Caché de Python
 __pycache__/
 *.pyc
-
-# IDEs
-.vscode/
-.idea/
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+venv/
+database.db

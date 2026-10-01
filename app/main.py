@@ -1,5 +1,7 @@
 import os
 import shutil
+import uuid
+import nh3
 import markdown
 from contextlib import asynccontextmanager
 from typing import List, Optional
@@ -8,10 +10,10 @@ from fastapi import FastAPI, Request, Form, UploadFile, File, Depends, status, C
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from sqlmodel import Session, select
+from sqlmodel import Session, select, update
 
 from app.database import crear_db_y_tablas, obtener_session
-from app.models import PerfilInstitucional, Planificacion, Usuario, CargaAcademica
+from app.models import PerfilInstitucional, Planificacion, Usuario, CargaAcademica, Coleccion
 from app.services.gemini_service import responder_consulta
 from app.services.auth_service import (
     hashear_password, 
@@ -33,6 +35,17 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
+IS_PRODUCTION = os.getenv("ENVIRONMENT") == "production"
+
+HTML_TAGS_PERMITIDAS = {
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'hr', 'strong', 'em', 'b', 'i',
+    'table', 'thead', 'tbody', 'tr', 'th', 'td', 'ul', 'ol', 'li', 'blockquote',
+    'pre', 'code', 'span', 'div'
+}
+
+def sanitizar_contenido(html_crudo: str) -> str:
+    return nh3.clean(html_crudo, tags=HTML_TAGS_PERMITIDAS)
+
 # ==========================================
 # DEPENDENCIA DE AUTENTICACIÓN
 # ==========================================
@@ -50,7 +63,6 @@ async def obtener_usuario_actual(
 # ==========================================
 # RUTAS DE NAVEGACIÓN PRINCIPAL
 # ==========================================
-
 @app.get("/", response_class=HTMLResponse)
 async def landing_page(request: Request):
     return templates.TemplateResponse(request=request, name="landing.html")
@@ -88,10 +100,15 @@ async def workspace(
 
     perfil_activo = None
     if institucion_id:
-        perfil_activo = session.get(PerfilInstitucional, institucion_id)
+        perfil_activo = session.exec(
+            select(PerfilInstitucional).where(
+                PerfilInstitucional.id == institucion_id,
+                PerfilInstitucional.usuario_id == usuario.id
+            )
+        ).first()
     
     if not perfil_activo:
-        colegio_real = next((i for i in instituciones if i.nombre_ie != "Espacio Personal / Libre"), None)
+        colegio_real = next((i for i in instituciones if i.nombre_ie != "Espacio Personal / Tutorías"), None)
         perfil_activo = colegio_real if colegio_real else instituciones[0]
 
     cargas = session.exec(
@@ -114,7 +131,13 @@ async def workspace(
         select(Planificacion)
         .where(Planificacion.usuario_id == usuario.id)
         .order_by(Planificacion.id.desc())
-        .limit(15)
+        .limit(20)
+    ).all()
+
+    colecciones = session.exec(
+        select(Coleccion)
+        .where(Coleccion.usuario_id == usuario.id)
+        .order_by(Coleccion.id.desc())
     ).all()
 
     return templates.TemplateResponse(
@@ -127,10 +150,14 @@ async def workspace(
             "areas": areas_disponibles,
             "grados": grados_disponibles,
             "secciones": secciones_disponibles,
-            "planificaciones": planificaciones
+            "planificaciones": planificaciones,
+            "colecciones": colecciones
         }
     )
 
+# ==========================================
+# SELECTORES DINÁMICOS (HTMX)
+# ==========================================
 @app.get("/api/selector-grados", response_class=HTMLResponse)
 async def selector_grados(
     institucion_id: int,
@@ -152,15 +179,15 @@ async def selector_grados(
     options_secciones = "".join([f'<option value="{s}">Secc. {s}</option>' for s in secciones])
 
     return HTMLResponse(f"""
-        <select name="grado_activo" 
+        <select name="grado_activo" form="form-chat"
                 hx-get="/api/selector-secciones?institucion_id={institucion_id}&contexto_activo={contexto_activo}" 
                 hx-target="next select" 
                 hx-trigger="change"
-                class="bg-calm-50 border border-calm-200 text-zen-800 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
+                class="bg-calm-50 dark:bg-calm-800 border border-calm-200 dark:border-calm-700 text-zen-800 dark:text-zen-400 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer min-w-[70px]">
             {options_grados}
         </select>
-        <select name="seccion_activa" 
-                class="bg-calm-50 border border-calm-200 text-zen-800 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
+        <select name="seccion_activa" form="form-chat"
+                class="bg-calm-50 dark:bg-calm-800 border border-calm-200 dark:border-calm-700 text-zen-800 dark:text-zen-400 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer min-w-[80px]">
             {options_secciones}
         </select>
     """)
@@ -184,7 +211,7 @@ async def selector_secciones(
     options = "".join([f'<option value="{s}">Secc. {s}</option>' for s in secciones])
     
     return HTMLResponse(f"""
-        <select name="seccion_activa" class="bg-calm-50 border border-calm-200 text-zen-800 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer">
+        <select name="seccion_activa" form="form-chat" class="bg-calm-50 dark:bg-calm-800 border border-calm-200 dark:border-calm-700 text-zen-800 dark:text-zen-400 text-xs font-bold rounded-xl px-2.5 py-1.5 outline-none transition cursor-pointer min-w-[80px]">
             {options}
         </select>
     """)
@@ -192,7 +219,6 @@ async def selector_secciones(
 # ==========================================
 # RUTAS DE REGISTRO Y LOGIN
 # ==========================================
-
 @app.post("/auth/registro")
 async def registro(
     nombre_completo: str = Form(...),
@@ -204,7 +230,7 @@ async def registro(
     correo_limpio = correo.strip().lower()
     existente = session.exec(select(Usuario).where(Usuario.correo == correo_limpio)).first()
     if existente:
-        return HTMLResponse("<p class='text-red-500 text-xs font-bold text-center mt-2'>El correo ya está registrado.</p>", status_code=400)
+        return HTMLResponse("<div class='p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-bold text-center mb-3'>Este correo ya está registrado.</div>", status_code=400)
 
     nuevo_usuario = Usuario(
         nombre_completo=nombre_completo.strip(),
@@ -217,8 +243,9 @@ async def registro(
     session.refresh(nuevo_usuario)
 
     token = crear_token_sesion(nuevo_usuario.id)
-    response = Response(status_code=status.HTTP_200_OK, headers={"HX-Redirect": "/onboarding"})
-    response.set_cookie(key="session_token", value=token, httponly=True, max_age=604800, samesite="lax")
+    response = RedirectResponse(url="/onboarding", status_code=status.HTTP_303_SEE_OTHER)
+    response.headers["HX-Redirect"] = "/onboarding"
+    response.set_cookie(key="session_token", value=token, httponly=True, secure=IS_PRODUCTION, max_age=604800, samesite="lax")
     return response
 
 @app.post("/auth/login")
@@ -231,17 +258,17 @@ async def login(
     usuario = session.exec(select(Usuario).where(Usuario.correo == correo_limpio)).first()
     
     if not usuario or not verificar_password(password, usuario.password_hash):
-        return HTMLResponse("<p class='text-red-500 text-xs font-bold text-center mt-2'>Credenciales incorrectas.</p>", status_code=401)
+        return HTMLResponse("<div class='p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-bold text-center mb-3'>Correo o contraseña incorrectos.</div>", status_code=401)
 
     instituciones = session.exec(
         select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)
     ).all()
-
     destino = "/app" if instituciones else "/onboarding"
 
     token = crear_token_sesion(usuario.id)
-    response = Response(status_code=status.HTTP_200_OK, headers={"HX-Redirect": destino})
-    response.set_cookie(key="session_token", value=token, httponly=True, max_age=604800, samesite="lax")
+    response = RedirectResponse(url=destino, status_code=status.HTTP_303_SEE_OTHER)
+    response.headers["HX-Redirect"] = destino
+    response.set_cookie(key="session_token", value=token, httponly=True, secure=IS_PRODUCTION, max_age=604800, samesite="lax")
     return response
 
 @app.get("/logout")
@@ -253,7 +280,6 @@ async def logout():
 # ==========================================
 # RUTAS DE ONBOARDING
 # ==========================================
-
 @app.get("/onboarding", response_class=HTMLResponse)
 async def onboarding_view(
     request: Request,
@@ -262,13 +288,7 @@ async def onboarding_view(
 ):
     if not usuario:
         return RedirectResponse(url="/auth", status_code=status.HTTP_303_SEE_OTHER)
-        
-    perfil = session.exec(select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)).first()
-    return templates.TemplateResponse(
-        request=request, 
-        name="onboarding.html",
-        context={"perfil": perfil}
-    )
+    return templates.TemplateResponse(request=request, name="onboarding.html")
 
 @app.post("/completar-onboarding")
 async def completar_onboarding(
@@ -280,18 +300,20 @@ async def completar_onboarding(
         return RedirectResponse(url="/auth", status_code=status.HTTP_303_SEE_OTHER)
 
     form_data = await request.form()
-    
     colegios_previos = session.exec(select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)).all()
+    
     for col in colegios_previos:
+        session.exec(update(Planificacion).where(Planificacion.institucion_id == col.id).values(institucion_id=None))
         cargas = session.exec(select(CargaAcademica).where(CargaAcademica.institucion_id == col.id)).all()
-        for c in cargas: session.delete(c)
+        for c in cargas:
+            session.delete(c)
         session.delete(col)
     session.commit()
 
     if form_data.get("es_independiente") == "on":
         espacio_libre = PerfilInstitucional(
             usuario_id=usuario.id,
-            nombre_ie="Espacio Personal / Libre",
+            nombre_ie="Espacio Personal / Tutorías",
             ugel="Sin formato oficial",
             nombre_docente=usuario.nombre_completo,
             nivel_educativo="General",
@@ -300,9 +322,8 @@ async def completar_onboarding(
         )
         session.add(espacio_libre)
 
-    num_colegios_str = form_data.get("num_colegios", "0")
     try:
-        num_colegios = int(num_colegios_str)
+        num_colegios = int(form_data.get("num_colegios", "0"))
     except ValueError:
         num_colegios = 0
 
@@ -316,10 +337,12 @@ async def completar_onboarding(
         nombre_logo = None
         
         if logo_file and getattr(logo_file, "filename", ""):
-            nombre_logo = f"logo_usr{usuario.id}_col{i}_{logo_file.filename}"
-            ruta = os.path.join(UPLOAD_DIR, nombre_logo)
-            with open(ruta, "wb") as buffer:
-                shutil.copyfileobj(logo_file.file, buffer)
+            ext = os.path.splitext(logo_file.filename)[1].lower()
+            if ext in [".png", ".jpg", ".jpeg", ".webp"]:
+                nombre_logo = f"logo_{usuario.id}_{uuid.uuid4().hex[:8]}{ext}"
+                ruta = os.path.join(UPLOAD_DIR, nombre_logo)
+                with open(ruta, "wb") as buffer:
+                    shutil.copyfileobj(logo_file.file, buffer)
 
         nuevo_colegio = PerfilInstitucional(
             usuario_id=usuario.id,
@@ -335,7 +358,6 @@ async def completar_onboarding(
         bloques = form_data.getlist(f"colegio_{i}_bloques[]")
         for bId in bloques:
             nivel = form_data.get(f"col_{i}_b{bId}_nivel", "Secundaria")
-            
             area = form_data.get(f"col_{i}_b{bId}_area", "")
             if area == "Otro":
                 area = form_data.get(f"col_{i}_b{bId}_area_otro", "Otro Curso").strip()
@@ -345,7 +367,6 @@ async def completar_onboarding(
                 secciones = form_data.getlist(f"col_{i}_b{bId}_g_{g}_secciones[]")
                 if not secciones:
                     secciones = ["Única"]
-                
                 for s in secciones:
                     carga = CargaAcademica(
                         institucion_id=nuevo_colegio.id,
@@ -362,14 +383,15 @@ async def completar_onboarding(
 # ==========================================
 # RUTAS DE CHAT Y GENERACIÓN IA
 # ==========================================
-
 @app.post("/enviar-mensaje", response_class=HTMLResponse)
 async def enviar_mensaje(
     request: Request,
     prompt: str = Form(...),
+    institucion_id: Optional[int] = Form(None),
     contexto_activo: str = Form(default="General"),
     grado_activo: str = Form(default="General"),
     seccion_activa: str = Form(default="Única"),
+    modo_generacion: str = Form(default="CNEB"),
     foto: UploadFile = File(None),
     usuario: Optional[Usuario] = Depends(obtener_usuario_actual),
     session: Session = Depends(obtener_session)
@@ -378,61 +400,64 @@ async def enviar_mensaje(
         return HTMLResponse("<p>No autorizado</p>", status_code=401)
 
     ruta_guardada = None
-    nombre_archivo = None
+    nombre_archivo_seguro = None
     
     if foto and foto.filename:
-        nombre_archivo = foto.filename
-        ruta_guardada = os.path.join(UPLOAD_DIR, nombre_archivo)
-        with open(ruta_guardada, "wb") as buffer:
-            shutil.copyfileobj(foto.file, buffer)
+        ext = os.path.splitext(foto.filename)[1].lower()
+        if ext in [".png", ".jpg", ".jpeg", ".webp", ".pdf"]:
+            nombre_archivo_seguro = f"{usuario.id}_{uuid.uuid4().hex[:12]}{ext}"
+            ruta_guardada = os.path.join(UPLOAD_DIR, nombre_archivo_seguro)
+            with open(ruta_guardada, "wb") as buffer:
+                shutil.copyfileobj(foto.file, buffer)
 
     fecha_actual = datetime.now().strftime("%d/%m/%Y")
     grado_completo = f"{grado_activo} - {seccion_activa}"
 
-    perfil = session.exec(select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)).first()
-    contexto_institucional = ""
+    if modo_generacion == "CNEB":
+        perfil = None
+        if institucion_id:
+            perfil = session.exec(select(PerfilInstitucional).where(
+                PerfilInstitucional.id == institucion_id,
+                PerfilInstitucional.usuario_id == usuario.id
+            )).first()
+        if not perfil:
+            perfil = session.exec(select(PerfilInstitucional).where(PerfilInstitucional.usuario_id == usuario.id)).first()
 
-    if perfil:
-        contexto_institucional = (
-            f" [I.E.: {perfil.nombre_ie}, UGEL: {perfil.ugel}, Docente: {perfil.nombre_docente}, "
-            f"Nivel Educativo: {perfil.nivel_educativo}, Curso Activo: {contexto_activo}, "
-            f"Grados a cargo: {grado_completo}, Enfoque: {perfil.enfoque_institucional}, "
-            f"Fecha de hoy: {fecha_actual}]"
-        )
+        contexto_institucional = ""
+        if perfil:
+            contexto_institucional = (
+                f"\n\n[DATOS INSTITUCIONALES PARA MEMBRETE]\n"
+                f"- I.E.: {perfil.nombre_ie} (UGEL {perfil.ugel})\n"
+                f"- Docente: {perfil.nombre_docente}\n"
+                f"- Curso: {contexto_activo} | Aula: {grado_completo}\n"
+                f"- Fecha de hoy: {fecha_actual}\n"
+            )
+        reglas_cneb = "\nREGLAS: Estructura la sesión con matrices pedagógicas según el CNEB (Inicio, Desarrollo, Cierre y Rúbrica)."
+        prompt_final = f"{prompt}{contexto_institucional}{reglas_cneb}"
+    else:
+        prompt_final = prompt
+        contexto_activo = "Modo Libre"
+        grado_completo = "Sin aula específica"
 
-    reglas_cneb = """
-    REGLAS ESTRICTAS DE FORMATO (Basado en requerimientos directivos UGEL):
-    Si el usuario pide una sesión de aprendizaje, DEBES estructurarla así:
-    1. Título de la sesión.
-    2. Datos informativos (Usa los datos de contexto provistos y la 'Fecha de hoy').
-    3. Una tabla inicial con las columnas: Área, Competencia, Capacidades, Desempeño, Criterios a evaluar, y Recursos/Materiales.
-    4. Una segunda tabla llamada 'Desarrollo de la Actividad' que incluya los procesos pedagógicos (Inicio, Desarrollo, Cierre) y los procesos didácticos del área.
-    5. Articular explícitamente la sesión con el DUA (Diseño Universal para el Aprendizaje).
-    Asegúrate de que los criterios tengan el mismo verbo del desempeño pero más específicos.
-    """
+    respuesta_ia = responder_consulta(prompt_final, ruta_guardada, modo_generacion)
 
-    prompt_enriquecido = f"{prompt}\n\nDatos de contexto del docente:{contexto_institucional}\n\n{reglas_cneb}"
-
-    respuesta_ia = responder_consulta(prompt_enriquecido, ruta_guardada)
-
-    respuesta_html = markdown.markdown(
-        respuesta_ia, 
-        extensions=['tables', 'nl2br', 'fenced_code']
-    )
+    html_crudo = markdown.markdown(respuesta_ia, extensions=['tables', 'nl2br', 'fenced_code'])
+    respuesta_html = sanitizar_contenido(html_crudo)
 
     titulo_limpio = prompt.strip()
     titulo_doc = (titulo_limpio[:45] + "...") if len(titulo_limpio) > 45 else titulo_limpio
-    titulo_doc = titulo_doc.capitalize()
 
     nueva_planificacion = Planificacion(
         usuario_id=usuario.id,
-        titulo=titulo_doc,
+        institucion_id=institucion_id if modo_generacion == "CNEB" else None,
+        titulo=titulo_doc.capitalize(),
         tipo_documento="Documento Pedagógico",
         area=contexto_activo,
         grado=grado_completo,
         contenido_markdown=respuesta_ia,
         prompt_docente=prompt,
-        archivo_adjunto=nombre_archivo
+        archivo_adjunto=nombre_archivo_seguro,
+        modo_generacion=modo_generacion
     )
     session.add(nueva_planificacion)
     session.commit()
@@ -443,12 +468,13 @@ async def enviar_mensaje(
         name="components/mensaje_ia.html",
         context={
             "prompt_usuario": prompt,
-            "archivo_nombre": nombre_archivo,
+            "archivo_nombre": nombre_archivo_seguro,
             "respuesta_html": respuesta_html,
             "planificacion_id": nueva_planificacion.id,
             "area_contexto": contexto_activo,
             "grado_contexto": grado_completo,
-            "es_nuevo": True
+            "es_nuevo": True,
+            "modo_generacion": modo_generacion
         }
     )
 
@@ -466,10 +492,8 @@ async def cargar_historial_detalle(
     if not plan or plan.usuario_id != usuario.id:
         return HTMLResponse("<p class='text-red-500 text-sm'>No se encontró la planificación.</p>")
 
-    respuesta_html = markdown.markdown(
-        plan.contenido_markdown, 
-        extensions=['tables', 'nl2br', 'fenced_code']
-    )
+    html_crudo = markdown.markdown(plan.contenido_markdown, extensions=['tables', 'nl2br', 'fenced_code'])
+    respuesta_html = sanitizar_contenido(html_crudo)
 
     return templates.TemplateResponse(
         request=request,
@@ -479,14 +503,14 @@ async def cargar_historial_detalle(
             "archivo_nombre": plan.archivo_adjunto,
             "respuesta_html": respuesta_html,
             "planificacion_id": plan.id,
-            "es_nuevo": False
+            "es_nuevo": False,
+            "modo_generacion": plan.modo_generacion
         }
     )
 
 # ==========================================
 # RUTAS DE CONFIGURACIÓN INSTITUCIONAL
 # ==========================================
-
 @app.get("/modal-perfil", response_class=HTMLResponse)
 async def obtener_modal_perfil(
     request: Request,
@@ -544,10 +568,7 @@ async def descargar_word(
     if not plan or plan.usuario_id != usuario.id:
         return HTMLResponse("<p>Documento no encontrado o sin acceso.</p>", status_code=404)
 
-    html_body = markdown.markdown(
-        plan.contenido_markdown, 
-        extensions=['tables', 'nl2br']
-    )
+    html_body = sanitizar_contenido(markdown.markdown(plan.contenido_markdown, extensions=['tables', 'nl2br']))
 
     html_content = f"""
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
@@ -568,18 +589,16 @@ async def descargar_word(
     </html>
     """
 
-    nombre_seguro = "".join([c for c in plan.titulo if c.isalpha() or c.isdigit() or c==' ']).rstrip()
-    nombre_archivo = f"{nombre_seguro.replace(' ', '_')}.doc"
-
+    nombre_seguro = "".join([c for c in plan.titulo if c.isalnum() or c == ' ']).rstrip().replace(' ', '_')
     headers = {
-        "Content-Disposition": f'attachment; filename="{nombre_archivo}"'
+        "Content-Disposition": f'attachment; filename="{nombre_seguro}.doc"'
     }
-    
     return Response(content=html_content, media_type="application/msword", headers=headers)
 
 @app.get("/filtrar-historial", response_class=HTMLResponse)
 async def filtrar_historial(
     request: Request,
+    institucion_id: Optional[int] = None,
     contexto_activo: Optional[str] = None,
     grado_activo: Optional[str] = None,
     seccion_activa: Optional[str] = None,
@@ -601,37 +620,74 @@ async def filtrar_historial(
         
     planificaciones = session.exec(query.limit(20)).all()
     
-    if ver_todos:
-        boton_toggle = """
-        <div id="contenedor-toggle-filtro" hx-swap-oob="true">
-            <button hx-get="/filtrar-historial" 
-                    hx-include="#selector-contexto-dual" 
-                    hx-target="#lista-historial" 
-                    class="text-[11px] font-bold text-zen-700 bg-zen-50 border border-zen-200 px-3 py-1.5 rounded-xl transition whitespace-nowrap">
-                Filtrar por aula activa
-            </button>
-        </div>
-        """
-    else:
-        boton_toggle = """
-        <div id="contenedor-toggle-filtro" hx-swap-oob="true">
-            <button hx-get="/filtrar-historial?ver_todos=true" 
-                    hx-target="#lista-historial" 
-                    class="text-[11px] font-bold text-slate-600 hover:text-zen-700 bg-calm-50 border border-calm-200 px-3 py-1.5 rounded-xl transition whitespace-nowrap">
-                Ver todo el historial
-            </button>
-        </div>
-        """
+    boton_label = "Filtrar por aula activa" if ver_todos else "Ver todo el historial"
+    toggle_flag = "" if ver_todos else "?ver_todos=true"
+    
+    boton_toggle = f"""
+    <div id="contenedor-toggle-filtro" hx-swap-oob="true">
+        <button hx-get="/filtrar-historial{toggle_flag}" 
+                hx-include="#panel-contexto-dual" 
+                hx-target="#lista-historial" 
+                class="text-[11px] font-bold text-slate-600 dark:text-stone-300 hover:text-zen-700 bg-calm-50 dark:bg-calm-800 border border-calm-200 dark:border-calm-700 px-3 py-1.5 rounded-xl transition whitespace-nowrap">
+            {boton_label}
+        </button>
+    </div>
+    """
 
     contenido_lista = templates.get_template("components/lista_historial.html").render(
         {"planificaciones": planificaciones}
     )
-    
     return HTMLResponse(content=contenido_lista + boton_toggle)
 
 @app.get("/terminos", response_class=HTMLResponse)
 async def terminos_condiciones(request: Request):
-    return templates.TemplateResponse(
-        request=request, 
-        name="terminos.html"
+    return templates.TemplateResponse(request=request, name="terminos.html")
+
+# ==========================================
+# RUTAS DE GESTIÓN DE COLECCIONES (HTMX OOB)
+# ==========================================
+@app.post("/api/colecciones", response_class=HTMLResponse)
+async def crear_coleccion(
+    nombre: str = Form(...),
+    usuario: Optional[Usuario] = Depends(obtener_usuario_actual),
+    session: Session = Depends(obtener_session)
+):
+    if not usuario:
+        return HTMLResponse("<p>No autorizado</p>", status_code=401)
+        
+    nueva = Coleccion(
+        usuario_id=usuario.id,
+        nombre=nombre.strip(),
+        color_tag="bg-zen-100 text-zen-800"
     )
+    session.add(nueva)
+    session.commit()
+    session.refresh(nueva)
+
+    html_boton = f"""
+    <button hx-swap-oob="beforeend:#lista-colecciones-items" 
+            class="w-full text-left px-3 py-2 rounded-lg hover:bg-calm-50 dark:hover:bg-calm-800 transition flex items-center gap-2 group">
+        <span class="text-[10px]">📁</span>
+        <span class="text-xs font-bold text-slate-700 dark:text-calm-200 truncate group-hover:text-zen-700 dark:group-hover:text-zen-400">{nueva.nombre}</span>
+    </button>
+    <script>document.getElementById('modal-coleccion').classList.add('hidden');</script>
+    """
+    return HTMLResponse(content=html_boton)
+
+@app.post("/api/planificaciones/{plan_id}/mover", response_class=HTMLResponse)
+async def mover_a_coleccion(
+    plan_id: int,
+    coleccion_id: Optional[int] = Form(default=None),
+    usuario: Optional[Usuario] = Depends(obtener_usuario_actual),
+    session: Session = Depends(obtener_session)
+):
+    if not usuario:
+        return HTMLResponse(status_code=401)
+        
+    plan = session.get(Planificacion, plan_id)
+    if plan and plan.usuario_id == usuario.id:
+        plan.coleccion_id = coleccion_id if coleccion_id != 0 else None
+        session.commit()
+        return HTMLResponse("<span class='text-[10px] text-emerald-600 font-bold'>✓ Guardado</span>")
+    
+    return HTMLResponse(status_code=400)

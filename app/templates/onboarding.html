@@ -38,10 +38,11 @@
 
         <form action="/completar-onboarding" method="POST" enctype="multipart/form-data" id="onboarding-form">
             
+            <!-- PASO 1 -->
             <div id="paso-1" class="space-y-6">
                 <div>
                     <h2 class="text-xl font-black text-slate-800">¡Bienvenido a tu espacio docente!</h2>
-                    <p class="text-sm text-slate-500 mt-1">Para personalizar tus documentos, cuéntanos cómo está estructurada tu carga laboral.</p>
+                    <p class="text-sm text-slate-500 mt-1">Configura tu carga de trabajo para personalizar los membretes y formatos de tus sesiones.</p>
                 </div>
 
                 <div class="bg-calm-50 p-5 rounded-2xl border border-calm-200">
@@ -56,8 +57,8 @@
                 <div class="flex items-center gap-3 p-4 border border-calm-200 rounded-2xl cursor-pointer hover:bg-calm-50 transition" onclick="document.getElementById('check-independiente').click()">
                     <input type="checkbox" id="check-independiente" name="es_independiente" class="w-5 h-5 text-zen-600 rounded cursor-pointer">
                     <div>
-                        <span class="block text-sm font-bold text-slate-700">Habilitar "Espacio Libre / Tutorías"</span>
-                        <span class="block text-xs text-slate-500">Ideal si das clases particulares o necesitas generar documentos sin formato de colegio.</span>
+                        <span class="block text-sm font-bold text-slate-700">Habilitar "Espacio Personal / Tutorías"</span>
+                        <span class="block text-xs text-slate-500">Permite planificar sin estar atado a una institución formal específica.</span>
                     </div>
                 </div>
 
@@ -68,10 +69,11 @@
                 </div>
             </div>
 
+            <!-- PASO 2 -->
             <div id="paso-2" class="space-y-6 hidden">
                 <div>
                     <h2 class="text-xl font-black text-slate-800">Configura tus Instituciones y Aulas</h2>
-                    <p class="text-sm text-slate-500 mt-1">Despliega los grados para seleccionar las secciones específicas que tienes a cargo.</p>
+                    <p class="text-sm text-slate-500 mt-1">Selecciona los grados y las secciones que tienes a cargo en cada colegio.</p>
                 </div>
 
                 <div id="contenedor-colegios" class="space-y-8"></div>
@@ -96,7 +98,7 @@
             "DPCC", "Educación Física", "Arte y Cultura", "Inglés", "Educación Religiosa", 
             "Educación para el Trabajo (EPT)", "Tutoría", "Computación / Informática"
         ];
-        const seccionesBase = ["A", "B", "C", "D", "E", "F", "G", "Única"];
+        const seccionesLetras = ["A", "B", "C", "D", "E", "F", "G"];
 
         function generarColegiosYAvanzar() {
             const num = parseInt(document.getElementById('num-colegios').value);
@@ -114,15 +116,15 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">Nombre de la I.E.</label>
-                            <input type="text" name="colegio_${i}_nombre" required placeholder="Ej: I.E. San Miguel" class="w-full text-sm rounded-xl border border-calm-200 p-2.5 outline-none focus:border-zen-700">
+                            <input type="text" name="colegio_${i}_nombre" required placeholder="Ej: I.E. San Miguel" class="w-full text-sm rounded-xl border border-calm-200 p-2.5 outline-none focus:border-zen-700 bg-white">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">UGEL</label>
-                            <input type="text" name="colegio_${i}_ugel" required placeholder="Ej: UGEL Piura" class="w-full text-sm rounded-xl border border-calm-200 p-2.5 outline-none focus:border-zen-700">
+                            <input type="text" name="colegio_${i}_ugel" required placeholder="Ej: UGEL Piura" class="w-full text-sm rounded-xl border border-calm-200 p-2.5 outline-none focus:border-zen-700 bg-white">
                         </div>
                         <div class="sm:col-span-2">
                             <label class="block text-xs font-bold text-slate-700 mb-1">Logo del Colegio (Opcional)</label>
-                            <input type="file" name="colegio_${i}_logo" accept="image/png, image/jpeg" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-zen-100 file:text-zen-700 hover:file:bg-zen-200 transition">
+                            <input type="file" name="colegio_${i}_logo" accept="image/png, image/jpeg, image/webp" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-zen-100 file:text-zen-700 hover:file:bg-zen-200 transition">
                         </div>
                     </div>
 
@@ -181,10 +183,8 @@
                 </div>
 
                 <div>
-                    <label class="text-[11px] font-bold text-slate-500 block mb-2">Selecciona los grados que enseñas y sus secciones:</label>
-                    <div id="grados_b${bId}" class="flex flex-col gap-2">
-                        <!-- Generado por JS -->
-                    </div>
+                    <label class="text-[11px] font-bold text-slate-500 block mb-2">Selecciona los grados y secciones a cargo:</label>
+                    <div id="grados_b${bId}" class="flex flex-col gap-2.5"></div>
                 </div>
             `;
             contenedor.appendChild(div);
@@ -216,17 +216,35 @@
             else grados = ["1°", "2°", "3°", "4°", "5°"];
 
             contenedorGrados.innerHTML = grados.map((g, index) => `
-                <div class="border border-calm-200 rounded-lg overflow-hidden bg-calm-50">
-                    <label class="flex items-center gap-2 p-2 bg-white cursor-pointer hover:bg-calm-50 transition border-b border-calm-100">
-                        <input type="checkbox" name="col_${colId}_b${bId}_grados[]" value="${g}" onchange="toggleSecciones(this, 'secc_${colId}_${bId}_${index}')" class="accent-zen-600 w-4 h-4"> 
-                        <span class="text-xs font-bold text-slate-700">${g}</span>
+                <div class="border border-calm-200 rounded-xl overflow-hidden bg-calm-50">
+                    <label class="flex items-center gap-2 p-2.5 bg-white cursor-pointer hover:bg-calm-50 transition border-b border-calm-100">
+                        <input type="checkbox" name="col_${colId}_b${bId}_grados[]" value="${g}" onchange="toggleSecciones(this, 'secc_${colId}_${bId}_${index}')" class="accent-zen-600 w-4 h-4 rounded"> 
+                        <span class="text-xs font-black text-slate-700">${g}</span>
                     </label>
-                    <div id="secc_${colId}_${bId}_${index}" class="hidden p-3 bg-calm-50">
-                        <span class="text-[10px] font-bold text-slate-500 block mb-2">Secciones para ${g}:</span>
-                        <div class="flex flex-wrap gap-2">
-                            ${seccionesBase.map(s => `
-                                <label class="flex items-center gap-1 px-2 py-1 bg-white border border-calm-200 rounded-md text-[11px] font-bold text-slate-600 cursor-pointer hover:border-zen-400 transition">
-                                    <input type="checkbox" name="col_${colId}_b${bId}_g_${g}_secciones[]" value="${s}" class="accent-zen-600"> ${s}
+                    <div id="secc_${colId}_${bId}_${index}" class="hidden p-3 bg-calm-50/80">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Secciones:</span>
+                            <div class="flex gap-2">
+                                <button type="button" onclick="marcarTodasSecciones('${colId}', '${bId}', '${g}', true)" class="text-[10px] font-bold text-zen-700 hover:underline">Marcar A-G</button>
+                                <span class="text-slate-300">|</span>
+                                <button type="button" onclick="marcarTodasSecciones('${colId}', '${bId}', '${g}', false)" class="text-[10px] font-bold text-slate-400 hover:underline">Limpiar</button>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                            <!-- Opción Única -->
+                            <label id="lbl_unica_${colId}_${bId}_${g}" class="flex items-center gap-1.5 px-3 py-1.5 bg-zen-50 border border-zen-300 rounded-lg text-xs font-extrabold text-zen-800 cursor-pointer hover:bg-zen-100 transition">
+                                <input type="checkbox" name="col_${colId}_b${bId}_g_${g}_secciones[]" value="Única" onchange="gestionarSeccionUnica(this, '${colId}', '${bId}', '${g}')" class="accent-zen-600"> 
+                                Única
+                            </label>
+
+                            <div class="h-5 w-px bg-calm-200 mx-1"></div>
+
+                            <!-- Opciones A-G -->
+                            ${seccionesLetras.map(s => `
+                                <label id="lbl_sec_${colId}_${bId}_${g}_${s}" class="flex items-center gap-1 px-2.5 py-1.5 bg-white border border-calm-200 rounded-lg text-xs font-bold text-slate-700 cursor-pointer hover:border-zen-400 transition">
+                                    <input type="checkbox" name="col_${colId}_b${bId}_g_${g}_secciones[]" value="${s}" onchange="gestionarSeccionLetra(this, '${colId}', '${bId}', '${g}')" class="accent-zen-600 sec-letra-${colId}-${bId}-${g}"> 
+                                    ${s}
                                 </label>
                             `).join('')}
                         </div>
@@ -241,10 +259,49 @@
                 divSecciones.classList.remove("hidden");
             } else {
                 divSecciones.classList.add("hidden");
-                // Desmarcar las secciones si desmarcan el grado
                 const subChecks = divSecciones.querySelectorAll('input[type="checkbox"]');
                 subChecks.forEach(c => c.checked = false);
             }
+        }
+
+        // LÓGICA DE SECCIÓN ÚNICA vs LETRAS
+        function gestionarSeccionUnica(checkUnica, colId, bId, g) {
+            const letras = document.querySelectorAll(`.sec-letra-${colId}-${bId}-${g}`);
+            letras.forEach(chk => {
+                const label = chk.parentElement;
+                if (checkUnica.checked) {
+                    chk.checked = false;
+                    chk.disabled = true;
+                    label.classList.add('opacity-35', 'pointer-events-none', 'bg-slate-100');
+                    label.classList.remove('hover:border-zen-400');
+                } else {
+                    chk.disabled = false;
+                    label.classList.remove('opacity-35', 'pointer-events-none', 'bg-slate-100');
+                }
+            });
+        }
+
+        function gestionarSeccionLetra(checkLetra, colId, bId, g) {
+            if (checkLetra.checked) {
+                const checkUnica = document.querySelector(`input[name="col_${colId}_b${bId}_g_${g}_secciones[]"][value="Única"]`);
+                if (checkUnica && checkUnica.checked) {
+                    checkUnica.checked = false;
+                }
+            }
+        }
+
+        function marcarTodasSecciones(colId, bId, g, marcar) {
+            const checkUnica = document.querySelector(`input[name="col_${colId}_b${bId}_g_${g}_secciones[]"][value="Única"]`);
+            if (checkUnica) {
+                checkUnica.checked = false;
+                gestionarSeccionUnica(checkUnica, colId, bId, g);
+            }
+            const letras = document.querySelectorAll(`.sec-letra-${colId}-${bId}-${g}`);
+            letras.forEach(chk => {
+                chk.disabled = false;
+                chk.checked = marcar;
+                chk.parentElement.classList.remove('opacity-35', 'pointer-events-none', 'bg-slate-100');
+            });
         }
 
         function volverPaso1() {

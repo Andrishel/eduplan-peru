@@ -64,22 +64,23 @@
   </div>
 </div>
 
-<!-- Inyección reactiva al historial lateral (HTMX Out of Band) -->
 <!-- SOLO se ejecuta si es un mensaje recién creado -->
 {% if es_nuevo %}
   <!-- OOB directo al ID del index -->
   <button hx-swap-oob="afterbegin:#lista-historial" hx-get="/historial/{{ planificacion_id }}" hx-target="#area-documento"
-    class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-calm-50 transition group flex flex-col gap-0.5 border-l-2 border-zen-600 bg-zen-50/40 mb-1">
+    class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-calm-50 dark:hover:bg-calm-800 transition group flex flex-col gap-0.5 border-l-2 border-zen-600 bg-zen-50/40 dark:bg-zen-900/20 mb-1">
     
-    <!-- Título: El prompt del usuario capitalizado -->
-    <span class="text-xs font-extrabold text-slate-800 truncate group-hover:text-zen-700 transition">
+    <span class="text-xs font-extrabold text-slate-800 dark:text-calm-200 truncate group-hover:text-zen-700 dark:group-hover:text-zen-400 transition">
         {{ prompt_usuario[:45] | capitalize }}{% if prompt_usuario|length > 45 %}...{% endif %}
     </span>
     
-    <!-- Subtítulo: Área y Grado -->
-    <span class="text-[10px] text-slate-500 truncate font-semibold">
-        {{ area_contexto }} • {{ grado_contexto }}
-    </span>
+    {% if modo_generacion == 'LIBRE' %}
+        <span class="text-[10px] text-slate-500 font-bold tracking-wide">💭 Asistente Libre</span>
+    {% else %}
+        <span class="text-[10px] text-slate-500 truncate font-semibold">
+            {{ area_contexto }} • {{ grado_contexto }}
+        </span>
+    {% endif %}
   </button>
 {% endif %}
 
@@ -122,9 +123,6 @@
     tfoot { display: table-footer-group; }
   }
 </style>
-
-<!-- Librería para generar PDFs desde el navegador -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <script>
   function generarPDF(id) {

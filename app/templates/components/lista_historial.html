@@ -1,12 +1,17 @@
 {% if planificaciones %}
     {% for plan in planificaciones %}
-    <button hx-get="/historial/{{ plan.id }}" hx-target="#area-documento" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-calm-50 transition group flex flex-col gap-0.5 border-l-2 border-transparent hover:border-zen-600">
-        <span class="text-xs font-bold text-slate-700 truncate group-hover:text-zen-700 transition">{{ plan.titulo }}</span>
-        <span class="text-[10px] text-slate-400 truncate font-medium">{{ plan.area }} • {{ plan.grado }}</span>
+    <button hx-get="/historial/{{ plan.id }}" hx-target="#area-documento" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-calm-50 dark:hover:bg-calm-800 transition group flex flex-col gap-0.5 border-l-2 border-transparent hover:border-zen-600 dark:hover:border-zen-400">
+        <span class="text-xs font-bold text-slate-700 dark:text-calm-200 truncate group-hover:text-zen-700 dark:group-hover:text-zen-400 transition">{{ plan.titulo }}</span>
+        
+        {% if plan.modo_generacion == 'LIBRE' %}
+            <span class="text-[10px] text-slate-400 dark:text-stone-500 font-bold tracking-wide">💭 Asistente Libre</span>
+        {% else %}
+            <span class="text-[10px] text-slate-400 dark:text-stone-400 truncate font-medium">{{ plan.area }} • {{ plan.grado }}</span>
+        {% endif %}
     </button>
     {% endfor %}
 {% else %}
-    <div class="px-3 py-4 text-xs text-slate-400 italic text-center">
-        No hay planificaciones para este grado y sección.
+    <div class="px-3 py-4 text-xs text-slate-400 dark:text-stone-500 italic text-center">
+        No hay planificaciones recientes.
     </div>
 {% endif %}
