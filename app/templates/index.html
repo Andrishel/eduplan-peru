@@ -86,7 +86,7 @@
                     class="text-slate-400 hover:text-zen-700 dark:hover:text-zen-400 transition font-bold"
                     title="Nueva Carpeta">➕</button>
             </div>
-            <div class="space-y-1 max-h-32 overflow-y-auto">
+            <div id="lista-colecciones-items" class="space-y-1 max-h-32 overflow-y-auto">
                 {% for col in colecciones %}
                 <button
                     class="w-full text-left px-3 py-2 rounded-lg hover:bg-calm-50 dark:hover:bg-calm-800 transition flex items-center gap-2 group">
@@ -118,7 +118,8 @@
                 <div
                     class="h-9 w-9 rounded-full bg-zen-100 dark:bg-zen-900/60 flex items-center justify-center text-zen-700 dark:text-zen-400 font-bold border border-zen-200 dark:border-zen-700 shrink-0 overflow-hidden">
                     {% if perfil and perfil.logo_url %}
-                    <img src="/static/uploads/{{ perfil.logo_url }}" alt="Logo" class="h-full w-full object-cover">
+                    <img src="{{ perfil.logo_url if perfil.logo_url.startswith('http') else '/static/uploads/' ~ perfil.logo_url }}"
+                        alt="Logo" class="h-full w-full object-cover">
                     {% else %}
                     {{ perfil.nombre_docente[0:1] if perfil and perfil.nombre_docente else (usuario.nombre_completo[0:1]
                     if usuario else 'U') }}
@@ -180,7 +181,8 @@
                         <div
                             class="flex items-center gap-1.5 bg-calm-50 dark:bg-calm-800 border border-calm-200 dark:border-calm-700 rounded-xl px-2.5 py-1.5 shrink-0">
                             <span class="text-xs">🏫</span>
-                            <select onchange="window.location.href='/app?institucion_id=' + this.value"
+                            <select name="institucion_id" form="form-chat"
+                                onchange="window.location.href='/app?institucion_id=' + this.value"
                                 class="bg-transparent text-slate-700 dark:text-calm-100 text-xs font-bold outline-none cursor-pointer truncate max-w-[120px]">
                                 {% for inst in instituciones %}
                                 <option value="{{ inst.id }}"

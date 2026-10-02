@@ -40,10 +40,11 @@ def responder_consulta(mensaje: str, ruta_archivo: str = None, modo: str = "CNEB
             if ext in [".png", ".jpg", ".jpeg", ".webp"]:
                 contenidos.append(Image.open(ruta_archivo))
             elif ext == ".pdf":
+                # Subida de archivo con manejo seguro
                 archivo_remoto = client.files.upload(file=ruta_archivo)
                 contenidos.append(archivo_remoto)
         except Exception as err:
-            print(f"Error procesando adjunto para Gemini: {err}")
+            print(f"Aviso: No se pudo adjuntar el documento a Gemini ({err}). Se procesará solo el texto.")
 
     contenidos.append(mensaje)
     ultimo_error = None
